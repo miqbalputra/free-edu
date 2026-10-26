@@ -50,3 +50,9 @@ cd backend && go build -o simaka . && ./simaka
 - Ganti `jwtSecret` di `backend/auth.go` sebelum dijual.
 - Frontend bisa di-host terpisah (nginx) atau tetap disajikan Go (`GET /`).
 - Untuk akses publik, buka port 80/443 di Tencent Security Group + pasang reverse proxy (Caddy/nginx) dengan HTTPS.
+
+## Lisensi
+**PolyForm Strict License 1.0.0** — lihat [LICENSE](LICENSE).
+- ✅ Bebas dipakai siapapun, untuk tujuan apa pun (termasuk komersial/internal sekolah)
+- ❌ Dilarang memodifikasi kode atau mendistribusikan versi modifikasi
+- 🤝 Kontribusi dipersilakan via pull request
