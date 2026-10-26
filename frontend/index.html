@@ -376,8 +376,8 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           <button class="btn sec" @click="exportCSV('nilai')">⬇️ Ekspor Excel</button>
         </div>
         <table v-if="nilai.length">
-          <tr><th>Siswa</th><th>Kelas</th><th>Mapel</th><th>Jenis</th><th>Semester</th><th>Tahun</th><th>Nilai</th></tr>
-          <tr v-for="n in nilai"><td><b>{{ n.siswa }}</b></td><td>{{ n.kelas }}</td><td>{{ n.mapel }}</td><td>{{ n.jenis.toUpperCase() }}</td><td>{{ n.semester }}</td><td>{{ n.tahun_ajaran }}</td><td><b :style="{color:n.nilai>=75?'var(--ok)':'var(--danger)'}">{{ n.nilai }}</b></td></tr>
+          <tr><th>Siswa</th><th>Kelas</th><th>Mapel</th><th>Jenis</th><th>Semester</th><th>Tahun</th><th>Nilai</th><th></th></tr>
+          <tr v-for="n in nilai"><td><b>{{ n.siswa }}</b></td><td>{{ n.kelas }}</td><td>{{ n.mapel }}</td><td>{{ n.jenis.toUpperCase() }}</td><td>{{ n.semester }}</td><td>{{ n.tahun_ajaran }}</td><td><b :style="{color:n.nilai>=75?'var(--ok)':'var(--danger)'}">{{ n.nilai }}</b></td><td><button class="btn warn sm" @click="delData('nilai', n.id)">Hapus</button></td></tr>
         </table>
         <div v-else class="empty">Belum ada nilai</div>
       </div>
@@ -388,9 +388,10 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           <button class="btn" @click="modalHafalan=true">+ Catat Setoran Hafalan</button>
         </div>
         <table v-if="hafalan.length">
-          <tr><th>Siswa</th><th>Surah</th><th>Ayat</th><th>Status</th><th>Tanggal</th><th>Catatan</th></tr>
+          <tr><th>Siswa</th><th>Surah</th><th>Ayat</th><th>Status</th><th>Tanggal</th><th>Catatan</th><th></th></tr>
           <tr v-for="h in hafalan"><td><b>{{ h.siswa }}</b></td><td>{{ h.surah }}</td><td>{{ h.ayat_dari }}–{{ h.ayat_sampai }}</td>
-            <td><span class="badge" :class="'b-'+h.status">{{ h.status }}</span></td><td>{{ h.tanggal }}</td><td>{{ h.catatan }}</td></tr>
+            <td><span class="badge" :class="'b-'+h.status">{{ h.status }}</span></td><td>{{ h.tanggal }}</td><td>{{ h.catatan }}</td>
+            <td><button class="btn warn sm" @click="delData('hafalan', h.id)">Hapus</button></td></tr>
         </table>
         <div v-else class="empty">Belum ada setoran hafalan</div>
       </div>
@@ -402,8 +403,8 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           <button class="btn" @click="modalJadwal=true">+ Tambah Jadwal</button>
         </div>
         <table v-if="jadwal.length">
-          <tr><th>Hari</th><th>Jam</th><th>Kelas</th><th>Mapel</th><th>Guru</th></tr>
-          <tr v-for="j in jadwal"><td><b>{{ j.hari }}</b></td><td>{{ j.jam_mulai.slice(0,5) }}–{{ j.jam_selesai.slice(0,5) }}</td><td>{{ j.kelas }}</td><td>{{ j.mapel }}</td><td>{{ j.guru }}</td></tr>
+          <tr><th>Hari</th><th>Jam</th><th>Kelas</th><th>Mapel</th><th>Guru</th><th></th></tr>
+          <tr v-for="j in jadwal"><td><b>{{ j.hari }}</b></td><td>{{ j.jam_mulai.slice(0,5) }}–{{ j.jam_selesai.slice(0,5) }}</td><td>{{ j.kelas }}</td><td>{{ j.mapel }}</td><td>{{ j.guru }}</td><td><button class="btn warn sm" @click="delData('jadwal', j.id)">Hapus</button></td></tr>
         </table>
         <div v-else class="empty">Belum ada jadwal</div>
       </div>
@@ -459,8 +460,8 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           </div>
           <div class="panel">
             <h3>Pengeluaran Terakhir</h3>
-            <table v-if="pengeluaran.length"><tr><th>Tanggal</th><th>Uraian</th><th>Jumlah</th></tr>
-              <tr v-for="p in pengeluaran.slice(0,8)"><td>{{ p.tanggal }}</td><td>{{ p.uraian }} <small style="color:var(--muted)">({{ p.kategori }})</small></td><td>{{ rp(p.jumlah) }}</td></tr></table>
+            <table v-if="pengeluaran.length"><tr><th>Tanggal</th><th>Uraian</th><th>Jumlah</th><th></th></tr>
+              <tr v-for="p in pengeluaran.slice(0,8)"><td>{{ p.tanggal }}</td><td>{{ p.uraian }} <small style="color:var(--muted)">({{ p.kategori }})</small></td><td>{{ rp(p.jumlah) }}</td><td><button class="btn warn sm" @click="delData('pengeluaran', p.id)">Hapus</button></td></tr></table>
             <div v-else class="empty">Belum ada pengeluaran</div>
           </div>
         </div>
@@ -471,7 +472,8 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
         <div class="toolbar"><button class="btn" @click="modalAgenda=true">+ Tambah Agenda</button></div>
         <div v-for="a in agenda" class="pengumuman-item">
           <b>📅 {{ a.judul }}</b><p>{{ a.deskripsi }}</p>
-          <small>{{ a.tanggal }} {{ a.waktu ? '· '+a.waktu.slice(0,5) : '' }} {{ a.lokasi ? '· 📍'+a.lokasi : '' }} · dibuat oleh {{ a.pembuat }}</small>
+          <small>{{ a.tanggal }} {{ a.waktu ? '· '+a.waktu.slice(0,5) : '' }} {{ a.lokasi ? '· 📍'+a.lokasi : '' }} · dibuat oleh {{ a.pembuat }}
+            <button v-if="user.role!=='guru'" class="btn warn sm" style="float:right" @click="delData('agenda', a.id)">Hapus</button></small>
         </div>
         <div v-if="!agenda.length" class="empty">Belum ada agenda</div>
       </div>
@@ -527,7 +529,8 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
         <div class="toolbar"><button class="btn" @click="modalUser=true">+ Tambah Pengguna</button></div>
         <table v-if="users.length"><tr><th>Nama</th><th>Email</th><th>Peran</th><th>NIP</th><th></th></tr>
           <tr v-for="u in users"><td><b>{{ u.nama }}</b></td><td>{{ u.email }}</td><td>{{ roleLabelOf(u.role) }}</td><td>{{ u.nip }}</td>
-          <td><button class="btn sec sm" @click="resetPw(u)">Reset Password</button></td></tr></table>
+          <td><button class="btn sec sm" @click="resetPw(u)">Reset Password</button>
+            <button v-if="u.id!==user.id && u.role!=='kepala_sekolah'" class="btn warn sm" @click="delData('users', u.id)">Hapus</button></td></tr></table>
       </div>
     </main>
 
@@ -986,6 +989,14 @@ createApp({
         prompt('Password baru untuk '+u.nama+':', r.password_baru);
       } catch(e){ showToast(e.message,true); }
     }
+    async function delData(mod, id){
+      if(!confirm('Yakin ingin menghapus data ini?')) return;
+      try {
+        await api('/api/'+mod+'/'+id,{method:'DELETE'});
+        showToast('Data dihapus ✅');
+        if(mod==='users'){ const u=await api('/api/users'); users.value=u; } else load(page.value);
+      } catch(e){ showToast(e.message,true); }
+    }
 
     onMounted(() => { if (token.value) { load('dashboard'); api('/api/pengaturan').then(p=>{ set.value=p; raporTA.value=p.tahun_ajaran_aktif||'2026/2027'; }).catch(()=>{}); } });
     return { API, token, user, page, loading, toast, toastErr, login, dash, siswa, nilai, hafalan, jadwal, spp, pengeluaran, agenda, pengumuman, users,
@@ -996,7 +1007,7 @@ createApp({
       mode, daftar, langganan, modalWA, waList,
  bulanList, mapelList, surahList, kelasList, filteredSiswa, roleLabel, greeting, greetSub, initials, pageTitle, todayID,
  showToast, rp, fmtDate, roleLabelOf, fnum, openRapor, cetakRapor, exportCSV, openBulk, loadBulkSiswa, saveBulk, debouncedSiswa, saveCatatan,
- doLogin, doDaftar, loadNotifWA, logout, load, openSiswa, saveSiswa, delSiswa, saveAbsensi, absenGuru,
+ doLogin, doDaftar, loadNotifWA, logout, load, openSiswa, saveSiswa, delSiswa, saveAbsensi, absenGuru, delData,
       openNilai, saveNilai, saveHafalan, generateSPP, bayarSPP, addPengeluaran, saveAgenda, savePengumuman, delPengumuman, saveJadwal, saveUser, saveSet, savePw, resetPw };
   }
 }).mount('#app');

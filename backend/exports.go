@@ -379,7 +379,7 @@ func handleBulkNilai(w http.ResponseWriter, r *http.Request, c *Claims) {
 		return
 	}
 	if in.TahunAjaran == "" {
-		in.TahunAjaran = "2026/2027"
+		in.TahunAjaran = tahunAjaranAktif()
 	}
 	n, skip := 0, 0
 	for _, it := range in.Items {

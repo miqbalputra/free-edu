@@ -171,3 +171,101 @@ func handleListLog(w http.ResponseWriter, r *http.Request) {
 	}
 	respond(w, 200, list)
 }
+
+// ---------- DELETE (Fase B: CRUD lengkap dengan cek tenant) ----------
+
+func deleteOwned(w http.ResponseWriter, table string, id int, sekolahID int, col string) bool {
+	res, err := db.Exec(`DELETE FROM `+table+` WHERE id=$1 AND `+col+`=$2`, id, sekolahID)
+	if err != nil {
+		jsonErr(w, 500, err.Error())
+		return false
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		jsonErr(w, 404, "Data tidak ditemukan")
+		return false
+	}
+	return true
+}
+
+func handleDeleteNilai(w http.ResponseWriter, r *http.Request, c *Claims) {
+	id, _ := strconv.Atoi(r.PathValue("id"))
+	// nilai Join ke siswa untuk cek tenant
+	res, err := db.Exec(`DELETE FROM nilai n USING siswa s WHERE n.id=$1 AND n.siswa_id=s.id AND s.sekolah_id=$2`, id, c.SekolahID)
+	if err != nil {
+		jsonErr(w, 500, err.Error())
+		return
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		jsonErr(w, 404, "Nilai tidak ditemukan")
+		return
+	}
+	respond(w, 200, map[string]string{"ok": "1"})
+}
+
+func handleDeleteHafalan(w http.ResponseWriter, r *http.Request, c *Claims) {
+	id, _ := strconv.Atoi(r.PathValue("id"))
+	res, err := db.Exec(`DELETE FROM hafalan h USING siswa s WHERE h.id=$1 AND h.siswa_id=s.id AND s.sekolah_id=$2`, id, c.SekolahID)
+	if err != nil {
+		jsonErr(w, 500, err.Error())
+		return
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		jsonErr(w, 404, "Hafalan tidak ditemukan")
+		return
+	}
+	respond(w, 200, map[string]string{"ok": "1"})
+}
+
+func handleDeleteJadwal(w http.ResponseWriter, r *http.Request, c *Claims) {
+	id, _ := strconv.Atoi(r.PathValue("id"))
+	if !deleteOwned(w, "jadwal", id, c.SekolahID, "sekolah_id") {
+		return
+	}
+	respond(w, 200, map[string]string{"ok": "1"})
+}
+
+func handleDeleteAgenda(w http.ResponseWriter, r *http.Request, c *Claims) {
+	id, _ := strconv.Atoi(r.PathValue("id"))
+	if !deleteOwned(w, "agenda", id, c.SekolahID, "sekolah_id") {
+		return
+	}
+	respond(w, 200, map[string]string{"ok": "1"})
+}
+
+func handleDeletePengeluaran(w http.ResponseWriter, r *http.Request, c *Claims) {
+	id, _ := strconv.Atoi(r.PathValue("id"))
+	if !deleteOwned(w, "pengeluaran", id, c.SekolahID, "sekolah_id") {
+		return
+	}
+	logActivity(c.UserID, "hapus_pengeluaran", "Menghapus pengeluaran ID "+itoa(id))
+	respond(w, 200, map[string]string{"ok": "1"})
+}
+
+func handleDeleteUser(w http.ResponseWriter, r *http.Request, c *Claims) {
+	id, _ := strconv.Atoi(r.PathValue("id"))
+	if id == c.UserID {
+		jsonErr(w, 400, "Tidak bisa menghapus akun sendiri")
+		return
+	}
+	var sid int
+	var role string
+	if err := db.QueryRow(`SELECT COALESCE(sekolah_id,0), role FROM users WHERE id=$1`, id).Scan(&sid, &role); err != nil || sid != c.SekolahID {
+		jsonErr(w, 404, "Pengguna tidak ditemukan")
+		return
+	}
+	if role == "kepala_sekolah" {
+		jsonErr(w, 403, "Kepala sekolah tidak bisa dihapus")
+		return
+	}
+	res, err := db.Exec(`DELETE FROM users WHERE id=$1`, id)
+	if err != nil {
+		jsonErr(w, 500, err.Error())
+		return
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		jsonErr(w, 404, "Pengguna tidak ditemukan")
+		return
+	}
+	logActivity(c.UserID, "hapus_user", "Menghapus pengguna ID "+itoa(id))
+	respond(w, 200, map[string]string{"ok": "1"})
+}

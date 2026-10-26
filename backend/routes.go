@@ -40,10 +40,12 @@ func registerRoutes(mux *http.ServeMux) {
 	// Nilai
 	api.Handle("GET /api/nilai", authMiddleware(http.HandlerFunc(handleListNilai)))
 	api.Handle("POST /api/nilai", authMiddleware(roleMW(handleUpsertNilai, "guru", "kepala_sekolah")))
+	api.Handle("DELETE /api/nilai/{id}", authMiddleware(roleMW(handleDeleteNilai, "guru", "kepala_sekolah")))
 
 	// Hafalan
 	api.Handle("GET /api/hafalan", authMiddleware(http.HandlerFunc(handleListHafalan)))
 	api.Handle("POST /api/hafalan", authMiddleware(roleMW(handleCreateHafalan, "guru", "kepala_sekolah")))
+	api.Handle("DELETE /api/hafalan/{id}", authMiddleware(roleMW(handleDeleteHafalan, "guru", "kepala_sekolah")))
 
 	// SPP
 	api.Handle("GET /api/spp", authMiddleware(http.HandlerFunc(handleListSPP)))
@@ -54,12 +56,15 @@ func registerRoutes(mux *http.ServeMux) {
 	api.Handle("GET /api/keuangan/ringkasan", authMiddleware(http.HandlerFunc(handleRingkasanKeuangan)))
 	api.Handle("GET /api/pengeluaran", authMiddleware(http.HandlerFunc(handleListPengeluaran)))
 	api.Handle("POST /api/pengeluaran", authMiddleware(roleMW(handleCreatePengeluaran, "tu", "kepala_sekolah")))
+	api.Handle("DELETE /api/pengeluaran/{id}", authMiddleware(roleMW(handleDeletePengeluaran, "tu", "kepala_sekolah")))
 
 	// Agenda & jadwal
 	api.Handle("GET /api/agenda", authMiddleware(http.HandlerFunc(handleListAgenda)))
 	api.Handle("POST /api/agenda", authMiddleware(roleMW(handleCreateAgenda, "kepala_sekolah", "tu", "guru")))
+	api.Handle("DELETE /api/agenda/{id}", authMiddleware(roleMW(handleDeleteAgenda, "kepala_sekolah", "tu")))
 	api.Handle("GET /api/jadwal", authMiddleware(http.HandlerFunc(handleListJadwal)))
 	api.Handle("POST /api/jadwal", authMiddleware(roleMW(handleCreateJadwal, "tu", "kepala_sekolah")))
+	api.Handle("DELETE /api/jadwal/{id}", authMiddleware(roleMW(handleDeleteJadwal, "tu", "kepala_sekolah")))
 
 	// Dashboard
 	api.Handle("GET /api/dashboard", authMiddleware(http.HandlerFunc(handleDashboard)))
@@ -98,6 +103,7 @@ func registerRoutes(mux *http.ServeMux) {
 	// User management (kepala sekolah)
 	api.Handle("GET /api/users", authMiddleware(roleMW(handleListUsers, "kepala_sekolah")))
 	api.Handle("POST /api/users", authMiddleware(roleMW(handleCreateUser, "kepala_sekolah")))
+	api.Handle("DELETE /api/users/{id}", authMiddleware(roleMW(handleDeleteUser, "kepala_sekolah")))
 
 	mux.Handle("/api/", api)
 }
@@ -133,7 +139,6 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 	}
 	key := ip + "|" + email
 	if msg := loginRateLimit(key); msg != "" {
-		db.Exec(`INSERT INTO login_fails (ip,email) VALUES ($1,$2)`, ip, email)
 		jsonErr(w, 429, msg)
 		return
 	}
@@ -281,10 +286,23 @@ func handleDeleteSiswa(w http.ResponseWriter, r *http.Request, c *Claims) {
 		jsonErr(w, 404, "Siswa tidak ditemukan")
 		return
 	}
-	for _, t := range []string{"absensi_siswa", "nilai", "hafalan", "spp"} {
-		db.Exec(`DELETE FROM `+t+` WHERE siswa_id=$1`, id)
+	tx, err := db.Begin()
+	if err != nil {
+		jsonErr(w, 500, err.Error())
+		return
 	}
-	if _, err := db.Exec(`DELETE FROM siswa WHERE id=$1`, id); err != nil {
+	defer tx.Rollback()
+	for _, t := range []string{"absensi_siswa", "nilai", "hafalan", "spp"} {
+		if _, err := tx.Exec(`DELETE FROM `+t+` WHERE siswa_id=$1`, id); err != nil {
+			jsonErr(w, 500, err.Error())
+			return
+		}
+	}
+	if _, err := tx.Exec(`DELETE FROM siswa WHERE id=$1`, id); err != nil {
+		jsonErr(w, 500, err.Error())
+		return
+	}
+	if err := tx.Commit(); err != nil {
 		jsonErr(w, 500, err.Error())
 		return
 	}
@@ -439,6 +457,16 @@ func handleListNilai(w http.ResponseWriter, r *http.Request) {
 	respond(w, 200, resp)
 }
 
+// tahunAjaranAktif membaca pengaturan sekolah; fallback 2026/2027
+func tahunAjaranAktif() string {
+	var ta string
+	db.QueryRow(`SELECT COALESCE(tahun_ajaran_aktif,'') FROM pengaturan WHERE id=1`).Scan(&ta)
+	if ta == "" {
+		ta = "2026/2027"
+	}
+	return ta
+}
+
 func handleUpsertNilai(w http.ResponseWriter, r *http.Request, c *Claims) {
 	var in struct {
 		SiswaID     int     `json:"siswa_id"`
@@ -461,7 +489,7 @@ func handleUpsertNilai(w http.ResponseWriter, r *http.Request, c *Claims) {
 		return
 	}
 	if in.TahunAjaran == "" {
-		in.TahunAjaran = "2026/2027"
+		in.TahunAjaran = tahunAjaranAktif()
 	}
 	_, err := db.Exec(`INSERT INTO nilai (siswa_id,mapel,kelas,jenis,semester,tahun_ajaran,nilai,guru_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
 		ON CONFLICT (siswa_id,mapel,jenis,semester,tahun_ajaran) DO UPDATE SET nilai=EXCLUDED.nilai, guru_id=EXCLUDED.guru_id`,
@@ -581,7 +609,7 @@ func handleGenerateSPP(w http.ResponseWriter, r *http.Request, c *Claims) {
 	if in.Jumlah == 0 {
 		db.QueryRow(`SELECT jumlah_default FROM spp_setting WHERE id=1`).Scan(&in.Jumlah)
 	}
-	rows, err := db.Query(`SELECT id FROM siswa WHERE status='aktif'`)
+	rows, err := db.Query(`SELECT id FROM siswa WHERE status='aktif' AND sekolah_id=$1`, c.SekolahID)
 	if err != nil {
 		jsonErr(w, 500, err.Error())
 		return
@@ -593,13 +621,24 @@ func handleGenerateSPP(w http.ResponseWriter, r *http.Request, c *Claims) {
 		ids = append(ids, id)
 	}
 	rows.Close()
+	tx, err := db.Begin()
+	if err != nil {
+		jsonErr(w, 500, err.Error())
+		return
+	}
+	defer tx.Rollback()
 	n := 0
 	for _, id := range ids {
-		_, err := db.Exec(`INSERT INTO spp (siswa_id,bulan,tahun,jumlah,status) VALUES ($1,$2,$3,$4,'belum') ON CONFLICT (siswa_id,bulan,tahun) DO NOTHING`, id, in.Bulan, in.Tahun, in.Jumlah)
+		_, err := tx.Exec(`INSERT INTO spp (siswa_id,bulan,tahun,jumlah,status) VALUES ($1,$2,$3,$4,'belum') ON CONFLICT (siswa_id,bulan,tahun) DO NOTHING`, id, in.Bulan, in.Tahun, in.Jumlah)
 		if err == nil {
 			n++
 		}
 	}
+	if err := tx.Commit(); err != nil {
+		jsonErr(w, 500, err.Error())
+		return
+	}
+	logActivity(c.UserID, "generate_spp", "Generate SPP "+in.Bulan+" "+in.Tahun+": "+itoa(n)+" tagihan")
 	respond(w, 200, map[string]interface{}{"generated": n})
 }
 

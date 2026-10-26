@@ -140,10 +140,11 @@ func migrate() error {
 			semester_aktif TEXT DEFAULT 'ganjil'
 		)`,
 		`INSERT INTO pengaturan (id) VALUES (1) ON CONFLICT DO NOTHING`,
+		`DROP TABLE IF EXISTS login_fails`,
 		`CREATE TABLE IF NOT EXISTS login_fails (
-			ip TEXT NOT NULL,
-			email TEXT NOT NULL,
-			waktu TIMESTAMPTZ DEFAULT now()
+			key TEXT PRIMARY KEY,
+			count INT NOT NULL DEFAULT 0,
+			locked_until TIMESTAMPTZ NOT NULL DEFAULT '1970-01-01'
 		)`,
 		`CREATE TABLE IF NOT EXISTS activity_log (
 			id SERIAL PRIMARY KEY,
