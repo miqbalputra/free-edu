@@ -35,9 +35,9 @@ func csvResponse(w http.ResponseWriter, name string, header []string, rows [][]s
 
 func handleExportAbsensi(w http.ResponseWriter, r *http.Request) {
 	bulan := r.URL.Query().Get("bulan") // "2026-11" atau kosong = bulan ini
-	where := `WHERE ($1 = '' OR to_char(a.tanggal,'YYYY-MM') = $1)`
+	where := `WHERE s.sekolah_id=$2 AND ($1 = '' OR to_char(a.tanggal,'YYYY-MM') = $1)`
 	rows, err := db.Query(`SELECT s.nis, s.nama, s.kelas, a.tanggal::text, a.status, COALESCE(a.keterangan,'')
-		FROM absensi_siswa a JOIN siswa s ON s.id=a.siswa_id `+where+` ORDER BY a.tanggal, s.kelas, s.nama`, bulan)
+		FROM absensi_siswa a JOIN siswa s ON s.id=a.siswa_id `+where+` ORDER BY a.tanggal, s.kelas, s.nama`, bulan, userFromContext(r).SekolahID)
 	if err != nil {
 		jsonErr(w, 500, err.Error())
 		return
@@ -54,7 +54,7 @@ func handleExportAbsensi(w http.ResponseWriter, r *http.Request) {
 
 func handleExportSPP(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`SELECT s.nis, s.nama, s.kelas, sp.bulan, sp.tahun, sp.jumlah::text, sp.status, COALESCE(sp.tgl_bayar::text,'-'), COALESCE(sp.metode,'-')
-		FROM spp sp JOIN siswa s ON s.id=sp.siswa_id ORDER BY sp.tahun, sp.bulan, s.kelas, s.nama`)
+		FROM spp sp JOIN siswa s ON s.id=sp.siswa_id WHERE s.sekolah_id=$1 ORDER BY sp.tahun, sp.bulan, s.kelas, s.nama`, userFromContext(r).SekolahID)
 	if err != nil {
 		jsonErr(w, 500, err.Error())
 		return
@@ -71,7 +71,7 @@ func handleExportSPP(w http.ResponseWriter, r *http.Request) {
 
 func handleExportNilai(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`SELECT s.nis, s.nama, n.kelas, n.mapel, n.jenis, n.semester, n.tahun_ajaran, n.nilai::text
-		FROM nilai n JOIN siswa s ON s.id=n.siswa_id ORDER BY n.kelas, s.nama, n.mapel`)
+		FROM nilai n JOIN siswa s ON s.id=n.siswa_id WHERE s.sekolah_id=$1 ORDER BY n.kelas, s.nama, n.mapel`, userFromContext(r).SekolahID)
 	if err != nil {
 		jsonErr(w, 500, err.Error())
 		return
@@ -90,7 +90,7 @@ func handleExportKeuangan(w http.ResponseWriter, r *http.Request) {
 	data := [][]string{}
 	// Pemasukan
 	rows, err := db.Query(`SELECT 'PEMASUKAN', s.nama || ' - SPP ' || sp.bulan || ' ' || sp.tahun, COALESCE(sp.metode,''), sp.tgl_bayar::text, sp.jumlah::text
-		FROM spp sp JOIN siswa s ON s.id=sp.siswa_id WHERE sp.status='lunas' ORDER BY sp.tgl_bayar`)
+		FROM spp sp JOIN siswa s ON s.id=sp.siswa_id WHERE sp.status='lunas' AND s.sekolah_id=$1 ORDER BY sp.tgl_bayar`, userFromContext(r).SekolahID)
 	if err == nil {
 		for rows.Next() {
 			var j, ket, met, tgl, jml string
@@ -99,7 +99,7 @@ func handleExportKeuangan(w http.ResponseWriter, r *http.Request) {
 		}
 		rows.Close()
 	}
-	rows2, err := db.Query(`SELECT 'PENGELUARAN', uraian, COALESCE(kategori,''), tanggal::text, jumlah::text FROM pengeluaran ORDER BY tanggal`)
+	rows2, err := db.Query(`SELECT 'PENGELUARAN', uraian, COALESCE(kategori,''), tanggal::text, jumlah::text FROM pengeluaran WHERE sekolah_id=$1 ORDER BY tanggal`, userFromContext(r).SekolahID)
 	if err == nil {
 		for rows2.Next() {
 			var j, ket, met, tgl, jml string
@@ -383,7 +383,13 @@ func handleBulkNilai(w http.ResponseWriter, r *http.Request, c *Claims) {
 	}
 	n, skip := 0, 0
 	for _, it := range in.Items {
-		if it.Nilai <= 0 {
+		if it.Nilai <= 0 || it.Nilai > 100 {
+			skip++
+			continue
+		}
+		// pastikan siswa milik sekolah yang sama
+		var sid int
+		if err := db.QueryRow(`SELECT sekolah_id FROM siswa WHERE id=$1`, it.SiswaID).Scan(&sid); err != nil || sid != c.SekolahID {
 			skip++
 			continue
 		}
@@ -401,7 +407,7 @@ func handleBulkNilai(w http.ResponseWriter, r *http.Request, c *Claims) {
 
 func handleSiswaByKelas(w http.ResponseWriter, r *http.Request) {
 	kelas := r.URL.Query().Get("kelas")
-	rows, err := db.Query(`SELECT id, nama, COALESCE(nis,'') FROM siswa WHERE status='aktif' AND kelas=$1 ORDER BY nama`, kelas)
+	rows, err := db.Query(`SELECT id, nama, COALESCE(nis,'') FROM siswa WHERE status='aktif' AND kelas=$1 AND sekolah_id=$2 ORDER BY nama`, kelas, userFromContext(r).SekolahID)
 	if err != nil {
 		jsonErr(w, 500, err.Error())
 		return

@@ -261,10 +261,14 @@ func handleUpdateSiswa(w http.ResponseWriter, r *http.Request, c *Claims) {
 		jsonErr(w, 400, err.Error())
 		return
 	}
-	_, err = db.Exec(`UPDATE siswa SET nis=NULLIF($1,''), nisn=NULLIF($2,''), nama=$3, jk=NULLIF($4,''), kelas=$5, tgl_lahir=NULLIF($6,'')::DATE, alamat=NULLIF($7,''), nama_ortu=NULLIF($8,''), hp_ortu=NULLIF($9,''), status=COALESCE(NULLIF($10,''),'aktif') WHERE id=$11`,
-		sval(in, "nis"), sval(in, "nisn"), sval(in, "nama"), sval(in, "jk"), sval(in, "kelas"), sval(in, "tgl_lahir"), sval(in, "alamat"), sval(in, "nama_ortu"), sval(in, "hp_ortu"), sval(in, "status"), id)
+	res, err := db.Exec(`UPDATE siswa SET nis=NULLIF($1,''), nisn=NULLIF($2,''), nama=$3, jk=NULLIF($4,''), kelas=$5, tgl_lahir=NULLIF($6,'')::DATE, alamat=NULLIF($7,''), nama_ortu=NULLIF($8,''), hp_ortu=NULLIF($9,''), status=COALESCE(NULLIF($10,''),'aktif') WHERE id=$11 AND sekolah_id=$12`,
+		sval(in, "nis"), sval(in, "nisn"), sval(in, "nama"), sval(in, "jk"), sval(in, "kelas"), sval(in, "tgl_lahir"), sval(in, "alamat"), sval(in, "nama_ortu"), sval(in, "hp_ortu"), sval(in, "status"), id, c.SekolahID)
 	if err != nil {
 		jsonErr(w, 500, err.Error())
+		return
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		jsonErr(w, 404, "Siswa tidak ditemukan")
 		return
 	}
 	respond(w, 200, map[string]string{"ok": "1"})
@@ -272,11 +276,15 @@ func handleUpdateSiswa(w http.ResponseWriter, r *http.Request, c *Claims) {
 
 func handleDeleteSiswa(w http.ResponseWriter, r *http.Request, c *Claims) {
 	id, _ := strconv.Atoi(r.PathValue("id"))
+	var sid int
+	if err := db.QueryRow(`SELECT sekolah_id FROM siswa WHERE id=$1`, id).Scan(&sid); err != nil || sid != c.SekolahID {
+		jsonErr(w, 404, "Siswa tidak ditemukan")
+		return
+	}
 	for _, t := range []string{"absensi_siswa", "nilai", "hafalan", "spp"} {
 		db.Exec(`DELETE FROM `+t+` WHERE siswa_id=$1`, id)
 	}
-	_, err := db.Exec(`DELETE FROM siswa WHERE id=$1`, id)
-	if err != nil {
+	if _, err := db.Exec(`DELETE FROM siswa WHERE id=$1`, id); err != nil {
 		jsonErr(w, 500, err.Error())
 		return
 	}
@@ -442,6 +450,16 @@ func handleUpsertNilai(w http.ResponseWriter, r *http.Request, c *Claims) {
 		Nilai       float64 `json:"nilai"`
 	}
 	json.NewDecoder(r.Body).Decode(&in)
+	if in.Nilai < 0 || in.Nilai > 100 {
+		jsonErr(w, 400, "Nilai harus di antara 0 dan 100")
+		return
+	}
+	// pastikan siswa milik sekolah yang sama
+	var sid int
+	if err := db.QueryRow(`SELECT sekolah_id FROM siswa WHERE id=$1`, in.SiswaID).Scan(&sid); err != nil || sid != c.SekolahID {
+		jsonErr(w, 404, "Siswa tidak ditemukan")
+		return
+	}
 	if in.TahunAjaran == "" {
 		in.TahunAjaran = "2026/2027"
 	}

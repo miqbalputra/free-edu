@@ -54,6 +54,17 @@ func randPassword() string {
 
 func handleResetPassword(w http.ResponseWriter, r *http.Request, c *Claims) {
 	id, _ := strconv.Atoi(r.PathValue("id"))
+	// hanya boleh reset user dari sekolah yang sama; tidak boleh reset sesama kepala sekolah lain
+	var sid int
+	var role string
+	if err := db.QueryRow(`SELECT COALESCE(sekolah_id,0), role FROM users WHERE id=$1`, id).Scan(&sid, &role); err != nil || sid != c.SekolahID {
+		jsonErr(w, 404, "Pengguna tidak ditemukan")
+		return
+	}
+	if role == "kepala_sekolah" && id != c.UserID {
+		jsonErr(w, 403, "Tidak boleh me-reset kepala sekolah lain")
+		return
+	}
 	newPass := randPassword()
 	hash, _ := bcrypt.GenerateFromPassword([]byte(newPass), bcrypt.DefaultCost)
 	res, err := db.Exec(`UPDATE users SET password=$1 WHERE id=$2`, string(hash), id)
@@ -78,6 +89,10 @@ func handleUbahPassword(w http.ResponseWriter, r *http.Request, c *Claims) {
 	json.NewDecoder(r.Body).Decode(&in)
 	if len(in.Baru) < 6 {
 		jsonErr(w, 400, "Password baru minimal 6 karakter")
+		return
+	}
+	if c.UserID == 0 {
+		jsonErr(w, 401, "Tidak terautentikasi")
 		return
 	}
 	var hash string
