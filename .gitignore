@@ -1,0 +1,6 @@
+backend/simaka
+backend/simaka[0-9]*
+backend/jwt_secret
+*.log
+node_modules/
+dist/

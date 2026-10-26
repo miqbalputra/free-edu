@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIMAKA — Sistem Informasi Manajemen Sekolah</title>
+<link rel="manifest" href="/api/manifest">
+<meta name="theme-color" content="#0f766e">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<script src="/assets/vue.global.prod.js"></script>
+<style>
+:root{
+  --bg:#f4f6fb; --card:#ffffff; --fg:#1e293b; --muted:#64748b; --border:#e2e8f0;
+  --primary:#0f766e; --primary-2:#14b8a6; --accent:#f59e0b; --danger:#ef4444; --ok:#22c55e;
+  --radius:14px; --shadow:0 1px 3px rgba(15,23,42,.08),0 8px 24px rgba(15,23,42,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--fg);font-size:15px}
+#app{min-height:100vh}
+
+/* ===== LOGIN ===== */
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0f766e 0%,#134e4a 60%,#1e3a5f 100%);padding:20px}
+.login-card{background:#fff;border-radius:20px;box-shadow:0 24px 60px rgba(0,0,0,.25);width:100%;max-width:960px;display:grid;grid-template-columns:1.1fr 1fr;overflow:hidden}
+.login-hero{background:linear-gradient(160deg,#134e4a,#0f766e);color:#fff;padding:48px 40px;display:flex;flex-direction:column;justify-content:center}
+.login-hero h1{font-size:34px;font-weight:800;letter-spacing:-.5px;margin-bottom:8px}
+.login-hero p{opacity:.85;line-height:1.6;margin-bottom:28px}
+.hero-feats{display:flex;flex-direction:column;gap:14px}
+.hero-feats div{display:flex;gap:10px;align-items:center;font-size:14px}
+.hero-feats span{background:rgba(255,255,255,.15);width:34px;height:34px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.login-form{padding:48px 40px;display:flex;flex-direction:column;justify-content:center}
+.login-form h2{font-size:22px;margin-bottom:4px}
+.login-form .sub{color:var(--muted);margin-bottom:24px;font-size:14px}
+.demo-accounts{margin-top:20px;font-size:12.5px;background:#f0fdfa;border:1px solid #99f6e4;border-radius:10px;padding:12px 14px;color:#115e59;line-height:1.7}
+.demo-accounts b{cursor:pointer;color:var(--primary)}
+
+/* ===== LAYOUT ===== */
+.shell{display:grid;grid-template-columns:250px 1fr;min-height:100vh}
+.sidebar{background:#134e4a;color:#d1fae5;display:flex;flex-direction:column;padding:20px 0}
+.brand{padding:0 20px 20px;border-bottom:1px solid rgba(255,255,255,.08)}
+.brand h1{font-size:20px;font-weight:800;color:#fff}
+.brand small{opacity:.6;font-size:11.5px}
+.nav{flex:1;padding:12px 10px;display:flex;flex-direction:column;gap:2px;overflow-y:auto}
+.nav button{display:flex;align-items:center;gap:10px;background:none;border:none;color:#a7f3d0;padding:11px 14px;border-radius:10px;cursor:pointer;font-size:14px;text-align:left;transition:.15s}
+.nav button:hover{background:rgba(255,255,255,.08);color:#fff}
+.nav button.active{background:var(--primary-2);color:#fff;font-weight:600}
+.nav .sec{font-size:10.5px;letter-spacing:1.2px;text-transform:uppercase;opacity:.5;padding:14px 14px 4px}
+.userbox{padding:16px 20px;border-top:1px solid rgba(255,255,255,.08);display:flex;align-items:center;gap:10px}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--accent);display:flex;align-items:center;justify-content:center;font-weight:700;color:#78350f}
+.userbox .info{flex:1;min-width:0}
+.userbox .info b{display:block;font-size:13px;color:#fff;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.userbox .info small{opacity:.6;font-size:11px}
+.userbox .out{background:none;border:none;color:#fca5a5;cursor:pointer;font-size:16px}
+
+.main{padding:24px 28px;overflow-y:auto}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px}
+.topbar h2{font-size:22px;font-weight:700}
+.topbar .date{color:var(--muted);font-size:13.5px}
+
+/* ===== CARDS / STATS ===== */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:22px}
+.stat{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:18px 20px;border-left:4px solid var(--primary-2)}
+.stat.alt{border-left-color:var(--accent)}
+.stat.warn{border-left-color:var(--danger)}
+.stat.blue{border-left-color:#3b82f6}
+.stat small{color:var(--muted);font-size:12.5px;display:block;margin-bottom:6px}
+.stat b{font-size:26px;font-weight:800}
+.panel{background:var(--card);border-radius:var(--radius);box-shadow:var(--shadow);padding:20px 22px;margin-bottom:20px}
+.panel h3{font-size:16px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+
+/* ===== TABLE ===== */
+table{width:100%;border-collapse:collapse;font-size:13.5px}
+th{text-align:left;color:var(--muted);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.4px;padding:8px 10px;border-bottom:2px solid var(--border)}
+td{padding:10px;border-bottom:1px solid var(--border)}
+tr:hover td{background:#f8fafc}
+.badge{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:600}
+.b-hadir{background:#dcfce7;color:#166534}.b-sakit{background:#fef3c7;color:#92400e}
+.b-izin{background:#dbeafe;color:#1e40af}.b-alpa{background:#fee2e2;color:#991b1b}
+.b-lunas{background:#dcfce7;color:#166534}.b-belum{background:#fee2e2;color:#991b1b}
+.b-lancar{background:#dcfce7;color:#166534}.b-proses{background:#dbeafe;color:#1e40af}
+.b-baru{background:#fef3c7;color:#92400e}.b-murojaah{background:#ede9fe;color:#5b21b6}
+
+/* ===== FORM ===== */
+input,select,textarea{width:100%;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;font-size:14px;font-family:inherit;background:#fff;color:var(--fg)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary-2);box-shadow:0 0 0 3px rgba(20,184,166,.15)}
+label{font-size:12.5px;font-weight:600;color:var(--muted);display:block;margin:10px 0 4px}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{background:var(--primary);color:#fff;border:none;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;transition:.15s}
+.btn:hover{background:#0d5f59}
+.btn.sec{background:#e2e8f0;color:var(--fg)}
+.btn.sec:hover{background:#cbd5e1}
+.btn.warn{background:var(--danger)}
+.btn.sm{padding:5px 12px;font-size:12.5px;border-radius:8px}
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.toolbar input,.toolbar select{width:auto}
+.empty{text-align:center;color:var(--muted);padding:32px;font-size:14px}
+.abs-check{display:flex;gap:6px}
+.abs-check button{border:1.5px solid var(--border);background:#fff;border-radius:8px;padding:4px 9px;cursor:pointer;font-size:11.5px;font-weight:600;color:var(--muted)}
+.abs-check button.on-hadir{background:#22c55e;border-color:#22c55e;color:#fff}
+.abs-check button.on-sakit{background:#f59e0b;border-color:#f59e0b;color:#fff}
+.abs-check button.on-izin{background:#3b82f6;border-color:#3b82f6;color:#fff}
+.abs-check button.on-alpa{background:#ef4444;border-color:#ef4444;color:#fff}
+.modal-bg{position:fixed;inset:0;background:rgba(15,23,42,.45);display:flex;align-items:center;justify-content:center;z-index:50;padding:20px}
+.modal{background:#fff;border-radius:16px;padding:26px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.3)}
+.modal h3{margin-bottom:16px}
+.toast{position:fixed;bottom:24px;right:24px;background:#134e4a;color:#fff;padding:13px 20px;border-radius:12px;font-size:14px;box-shadow:0 10px 30px rgba(0,0,0,.25);z-index:99}
+.toast.err{background:var(--danger)}
+.pengumuman-item{border-left:3px solid var(--primary-2);padding:10px 14px;margin-bottom:12px;background:#f8fafc;border-radius:0 10px 10px 0}
+.pengumuman-item b{font-size:14px}
+.pengumuman-item p{font-size:13.5px;color:#475569;margin-top:4px;line-height:1.5}
+.pengumuman-item small{color:var(--muted);font-size:11.5px}
+.pager{display:flex;align-items:center;justify-content:center;gap:14px;margin-top:14px;font-size:13px;color:var(--muted)}
+.pager button:disabled{opacity:.4;cursor:not-allowed}
+@media(max-width:900px){
+  .login-card{grid-template-columns:1fr}
+  .login-hero{display:none}
+  .shell{grid-template-columns:1fr}
+  .sidebar{flex-direction:row;align-items:center;overflow-x:auto;padding:0}
+  .brand,.userbox{display:none}
+  .nav{flex-direction:row;padding:8px}
+  .nav .sec{display:none}
+  .grid2{grid-template-columns:1fr}
+  .main{padding:16px}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- LOGIN -->
+  <div v-if="!token" class="login-wrap">
+  <div class="login-card">
+    <div class="login-hero">
+      <h1>🎓 SIMAKA</h1>
+      <p>Sistem Informasi Manajemen Sekolah All-in-One untuk Kepala Sekolah, Guru, dan Tata Usaha.</p>
+      <div class="hero-feats">
+        <div><span>👨‍🎓</span> Data siswa &amp; absensi harian</div>
+        <div><span>📝</span> Nilai &amp; rapor per semester</div>
+        <div><span>📖</span> Pencatatan hafalan Al-Qur'an</div>
+        <div><span>💰</span> SPP &amp; keuangan sekolah</div>
+        <div><span>📅</span> Jadwal, agenda &amp; pengumuman</div>
+      </div>
+    </div>
+    <div class="login-form">
+      <h2>{{ mode==='daftar' ? 'Daftar Sekolah Baru 🏫' : 'Selamat Datang 👋' }}</h2>
+      <div class="sub">{{ mode==='daftar' ? 'Gratis 14 hari, tanpa kartu kredit' : 'Masuk untuk mengelola sekolah Anda' }}</div>
+      <template v-if="mode==='daftar'">
+        <label>Nama Sekolah *</label><input v-model="daftar.nama_sekolah" placeholder="mis. SDIT Al-Furqon">
+        <label>Subdomain * (huruf kecil/tanpa spasi)</label><input v-model="daftar.subdomain" placeholder="mis. alfurqon">
+        <div class="frow">
+          <div><label>Nama Admin (Kepala Sekolah) *</label><input v-model="daftar.nama_admin"></div>
+          <div><label>NIP</label><input v-model="daftar.nip"></div>
+        </div>
+        <div class="frow">
+          <div><label>Email *</label><input v-model="daftar.email"></div>
+          <div><label>Password * (min 6)</label><input type="password" v-model="daftar.password"></div>
+        </div>
+      </template>
+      <template v-else>
+        <label>Email</label>
+        <input v-model="login.email" @keyup.enter="doLogin" placeholder="nama@sekolah.id">
+        <label>Password</label>
+        <input v-model="login.password" type="password" @keyup.enter="doLogin" placeholder="••••••••">
+      </template>
+      <div style="margin-top:18px">
+        <button class="btn" style="width:100%" @click="mode==='daftar' ? doDaftar() : doLogin()" :disabled="loading">
+          {{ loading ? 'Memproses...' : (mode==='daftar' ? 'Daftar & Mulai Trial' : 'Masuk') }}
+        </button>
+      </div>
+      <div style="text-align:center;margin-top:12px;font-size:13px">
+        <a href="#" @click.prevent="mode = mode==='daftar' ? 'login':'daftar'" style="color:var(--primary);font-weight:600">
+          {{ mode==='daftar' ? '← Sudah punya akun? Masuk' : 'Belum punya? Daftar sekolah baru (gratis 14 hari)' }}
+        </a>
+      </div>
+      <div class="demo-accounts" v-if="mode==='login'">
+        <b>Akun demo:</b><br>
+        Kepala Sekolah — <b @click="login.email='kepala@simaka.id';login.password='kepala123'">kepala@simaka.id</b><br>
+        Guru — <b @click="login.email='guru@simaka.id';login.password='guru123'">guru@simaka.id</b><br>
+        Tata Usaha — <b @click="login.email='tu@simaka.id';login.password='tu123'">tu@simaka.id</b>
+      </div>
+    </div>
+  </div>
+  </div>
+
+  <!-- APP SHELL -->
+  <div v-else class="shell">
+    <aside class="sidebar">
+      <div class="brand"><h1>🎓 SIMAKA</h1><small>Manajemen Sekolah</small></div>
+      <nav class="nav">
+        <button :class="{active:page==='dashboard'}" @click="page='dashboard'">🏠 Dashboard</button>
+        <div class="sec">Kesiswaan</div>
+        <button :class="{active:page==='siswa'}" @click="page='siswa'">👨‍🎓 Data Siswa</button>
+        <button :class="{active:page==='absensi'}" @click="page='absensi'">✅ Absensi Siswa</button>
+        <button :class="{active:page==='nilai'}" @click="page='nilai'">📝 Nilai</button>
+        <button :class="{active:page==='rapor'}" @click="page='rapor'">📄 Rapor</button>
+        <button :class="{active:page==='hafalan'}" @click="page='hafalan'">📖 Hafalan</button>
+        <button :class="{active:page==='jadwal'}" @click="page='jadwal'">🗓️ Jadwal</button>
+        <div class="sec">Kepegawaian &amp; Keuangan</div>
+        <button v-if="user.role!=='guru'" :class="{active:page==='absensi-guru'}" @click="page='absensi-guru'">🧑‍🏫 Absensi Guru</button>
+        <button :class="{active:page==='spp'}" @click="page='spp'">💰 SPP</button>
+        <button v-if="user.role!=='guru'" :class="{active:page==='keuangan'}" @click="page='keuangan'">🏦 Keuangan</button>
+        <div class="sec">Umum</div>
+        <button :class="{active:page==='agenda'}" @click="page='agenda'">📅 Agenda</button>
+        <button :class="{active:page==='pengumuman'}" @click="page='pengumuman'">📢 Pengumuman</button>
+        <button v-if="user.role==='kepala_sekolah'" :class="{active:page==='users'}" @click="page='users'">⚙️ Pengguna</button>
+        <button v-if="user.role==='kepala_sekolah'" :class="{active:page==='log'}" @click="page='log'">🕵️ Log Aktivitas</button>
+        <button v-if="user.role!=='guru'" :class="{active:page==='pengaturan'}" @click="page='pengaturan'">🏫 Profil Sekolah</button>
+        <button :class="{active:page==='akun'}" @click="page='akun'">🔑 Akun Saya</button>
+      </nav>
+      <div class="userbox">
+        <div class="avatar">{{ initials }}</div>
+        <div class="info"><b>{{ user.nama }}</b><small>{{ roleLabel }}</small></div>
+        <button class="out" @click="logout" title="Keluar">⎋</button>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar">
+        <h2>{{ pageTitle }}</h2>
+        <div class="date">{{ todayID }}</div>
+      </div>
+
+      <!-- Banner trial -->
+      <div v-if="langganan.status==='trial'" class="panel" style="background:#fffbeb;border:1.5px solid var(--accent);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:20px">⏳</span>
+        <div style="flex:1;font-size:13.5px">
+          <b>Masa trial: sisa {{ langganan.trial_sisa_hari }} hari.</b>
+          Upgrade ke paket Sekolah (Rp75rb/bulan) untuk akses penuh tanpa batas — hubungi admin via WhatsApp.
+        </div>
+        <a href="https://wa.me/6281234567890?text=Halo%2C%20saya%20mau%20upgrade%20SIMAKA" target="_blank" class="btn" style="text-decoration:none;white-space:nowrap">Upgrade</a>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div v-if="page==='dashboard'">
+        <div class="stats">
+          <div class="stat"><small>Total Siswa Aktif</small><b>{{ dash.total_siswa || 0 }}</b></div>
+          <div class="stat blue"><small>Kehadiran Hari Ini</small><b>{{ dash.hadir_hari_ini || 0 }}</b></div>
+          <div class="stat alt"><small>Saldo Kas (SPP Lunas)</small><b>{{ rp(dash.saldo) }}</b></div>
+          <div class="stat warn"><small>SPP Belum Lunas</small><b>{{ dash.spp_belum_lunas || 0 }}</b></div>
+        </div>
+        <div class="grid2">
+          <div class="panel"><h3>Siswa per Kelas</h3>
+            <table v-if="dash.per_kelas && dash.per_kelas.length"><tr><th>Kelas</th><th>Jumlah</th></tr>
+              <tr v-for="k in dash.per_kelas"><td>{{ k.kelas }}</td><td><b>{{ k.jumlah }}</b> siswa</td></tr></table>
+            <div v-else class="empty">Belum ada data</div>
+          </div>
+          <div class="panel"><h3>Pengumuman Terbaru</h3>
+            <div v-for="p in pengumuman.slice(0,3)" class="pengumuman-item">
+              <b>{{ p.judul }}</b><p>{{ p.isi }}</p><small>{{ p.pembuat }} · {{ fmtDate(p.created_at) }}</small>
+            </div>
+            <div v-if="!pengumuman.length" class="empty">Belum ada pengumuman</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RAPOR -->
+      <div v-if="page==='rapor'" class="panel">
+        <h3>📄 Cetak Rapor Siswa</h3>
+        <div class="toolbar">
+          <select v-model="raporSiswa" style="min-width:240px">
+            <option :value="null">— Pilih Siswa —</option>
+            <option v-for="s in siswa" :value="s.id">{{ s.nama }} ({{ s.kelas }})</option>
+          </select>
+          <select v-model="raporTA">
+            <option :value="set.tahun_ajaran_aktif || '2026/2027'">{{ set.tahun_ajaran_aktif || '2026/2027' }} (aktif)</option>
+            <option value="2025/2026">2025/2026</option>
+            <option value="2024/2025">2024/2025</option>
+          </select>
+          <button class="btn" @click="openRapor" :disabled="!raporSiswa">Lihat Rapor</button>
+        </div>
+        <div v-if="rapor" >
+          <div class="stats">
+            <div class="stat"><small>Rata-rata Nilai</small><b>{{ rapor.rata_rata.toFixed(1) }}</b></div>
+            <div class="stat blue"><small>Kehadiran</small><b>{{ rapor.absensi.hadir }} hadir</b></div>
+            <div class="stat alt"><small>SPP</small><b>{{ rapor.spp_lunas }} lunas / {{ rapor.spp_belum }} belum</b></div>
+            <div class="stat warn"><small>Hafalan Tercatat</small><b>{{ rapor.hafalan.length }}</b></div>
+          </div>
+          <table>
+            <tr><th>Mapel</th><th>Tugas</th><th>UH</th><th>PTS</th><th>PAS</th><th>NA</th></tr>
+            <tr v-for="n in rapor.nilai"><td><b>{{ n.mapel }}</b></td><td>{{ fnum(n.tugas) }}</td><td>{{ fnum(n.uh) }}</td><td>{{ fnum(n.pts) }}</td><td>{{ fnum(n.pas) }}</td><td><b>{{ fnum(n.na) }}</b></td></tr>
+          </table>
+          <div style="margin-top:16px">
+            <h3 style="margin-bottom:10px">✍️ Catatan Wali Kelas</h3>
+            <div class="frow">
+              <div><label>Ekstrakurikuler</label><input v-model="raporCatatan.ekstrakurikuler" placeholder="mis. Tahfidz, Panahan"></div>
+              <div><label>Prestasi</label><input v-model="raporCatatan.prestasi" placeholder="mis. Juara 2 Lomba Tahfidz"></div>
+            </div>
+            <label>Catatan Wali Kelas</label><textarea v-model="raporCatatan.catatan_wali" rows="2"></textarea>
+            <div style="margin-top:12px;display:flex;gap:10px">
+              <button class="btn sec" @click="saveCatatan" v-if="user.role!=='guru' || true">💾 Simpan Catatan</button>
+              <button class="btn" @click="cetakRapor">🖨️ Cetak / Simpan PDF</button>
+            </div>
+          </div>
+        </div>
+        <div v-else class="empty">Pilih siswa untuk melihat rapor</div>
+      </div>
+
+      <!-- SISWA -->
+      <div v-if="page==='siswa'" class="panel">
+        <div class="toolbar">
+          <select v-model="filterKelas"><option value="">Semua Kelas</option><option v-for="k in kelasList" :value="k">{{ k }}</option></select>
+          <input v-model="qSiswa" @input="debouncedSiswa" placeholder="🔍 Cari nama / NIS..." style="flex:1;min-width:180px">
+          <button class="btn" @click="openSiswa()">+ Tambah Siswa</button>
+        </div>
+        <table v-if="siswaData.length">
+          <tr><th>NIS</th><th>Nama</th><th>L/P</th><th>Kelas</th><th>Orang Tua</th><th>HP</th><th>Status</th><th></th></tr>
+          <tr v-for="s in siswaData">
+            <td>{{ s.nis }}</td><td><b>{{ s.nama }}</b></td><td>{{ s.jk }}</td><td>{{ s.kelas }}</td>
+            <td>{{ s.nama_ortu }}</td><td>{{ s.hp_ortu }}</td><td><span class="badge" :class="s.status==='aktif'?'b-hadir':'b-baru'">{{ s.status }}</span></td>
+            <td><button class="btn sec sm" @click="openSiswa(s)">Edit</button> <button class="btn warn sm" @click="delSiswa(s)">Hapus</button></td>
+          </tr>
+        </table>
+        <div v-else class="empty">Belum ada siswa</div>
+        <div class="pager" v-if="siswaPages>1">
+          <button class="btn sec sm" :disabled="siswaPage<=1" @click="siswaPage--;load('siswa')">‹ Sebelumnya</button>
+          <span>Halaman {{ siswaPage }} / {{ siswaPages }}</span>
+          <button class="btn sec sm" :disabled="siswaPage>=siswaPages" @click="siswaPage++;load('siswa')">Berikutnya ›</button>
+        </div>
+      </div>
+
+      <!-- ABSENSI SISWA -->
+      <div v-if="page==='absensi'" class="panel">
+        <div class="toolbar">
+          <input type="date" v-model="absTanggal">
+          <select v-model="absKelas"><option value="">Semua Kelas</option><option v-for="k in kelasList" :value="k">{{ k }}</option></select>
+          <button class="btn" @click="saveAbsensi">💾 Simpan Absensi</button>
+          <button class="btn sec" @click="exportCSV('absensi')">⬇️ Ekspor Excel</button>
+        </div>
+        <table v-if="absSiswa.length">
+          <tr><th>Nama</th><th>Kelas</th><th style="width:220px">Status Kehadiran</th></tr>
+          <tr v-for="(a,i) in absSiswa">
+            <td><b>{{ a.nama }}</b></td><td>{{ a.kelas }}</td>
+            <td><div class="abs-check">
+              <button v-for="st in ['hadir','sakit','izin','alpa']" :class="{'on-'+st: a.status===st}" @click="a.status=st">{{ st[0].toUpperCase()+st.slice(1) }}</button>
+            </div></td>
+          </tr>
+        </table>
+        <div v-else class="empty">Memuat / tidak ada siswa</div>
+      </div>
+
+      <!-- NILAI -->
+      <div v-if="page==='nilai'" class="panel">
+        <div class="toolbar">
+          <select v-model="filterKelasN"><option value="">Semua Kelas</option><option v-for="k in kelasList" :value="k">{{ k }}</option></select>
+          <select v-model="filterMapel"><option value="">Semua Mapel</option><option v-for="m in mapelList" :value="m">{{ m }}</option></select>
+          <button class="btn" @click="openNilai()">+ Input Nilai</button>
+          <button class="btn" style="background:var(--accent)" @click="openBulk">⚡ Nilai Massal</button>
+          <button class="btn sec" @click="exportCSV('nilai')">⬇️ Ekspor Excel</button>
+        </div>
+        <table v-if="nilai.length">
+          <tr><th>Siswa</th><th>Kelas</th><th>Mapel</th><th>Jenis</th><th>Semester</th><th>Tahun</th><th>Nilai</th></tr>
+          <tr v-for="n in nilai"><td><b>{{ n.siswa }}</b></td><td>{{ n.kelas }}</td><td>{{ n.mapel }}</td><td>{{ n.jenis.toUpperCase() }}</td><td>{{ n.semester }}</td><td>{{ n.tahun_ajaran }}</td><td><b :style="{color:n.nilai>=75?'var(--ok)':'var(--danger)'}">{{ n.nilai }}</b></td></tr>
+        </table>
+        <div v-else class="empty">Belum ada nilai</div>
+      </div>
+
+      <!-- HAFALAN -->
+      <div v-if="page==='hafalan'" class="panel">
+        <div class="toolbar">
+          <button class="btn" @click="modalHafalan=true">+ Catat Setoran Hafalan</button>
+        </div>
+        <table v-if="hafalan.length">
+          <tr><th>Siswa</th><th>Surah</th><th>Ayat</th><th>Status</th><th>Tanggal</th><th>Catatan</th></tr>
+          <tr v-for="h in hafalan"><td><b>{{ h.siswa }}</b></td><td>{{ h.surah }}</td><td>{{ h.ayat_dari }}–{{ h.ayat_sampai }}</td>
+            <td><span class="badge" :class="'b-'+h.status">{{ h.status }}</span></td><td>{{ h.tanggal }}</td><td>{{ h.catatan }}</td></tr>
+        </table>
+        <div v-else class="empty">Belum ada setoran hafalan</div>
+      </div>
+
+      <!-- JADWAL -->
+      <div v-if="page==='jadwal'" class="panel">
+        <div class="toolbar">
+          <select v-model="filterKelasJ"><option value="">Semua Kelas</option><option v-for="k in kelasList" :value="k">{{ k }}</option></select>
+          <button class="btn" @click="modalJadwal=true">+ Tambah Jadwal</button>
+        </div>
+        <table v-if="jadwal.length">
+          <tr><th>Hari</th><th>Jam</th><th>Kelas</th><th>Mapel</th><th>Guru</th></tr>
+          <tr v-for="j in jadwal"><td><b>{{ j.hari }}</b></td><td>{{ j.jam_mulai.slice(0,5) }}–{{ j.jam_selesai.slice(0,5) }}</td><td>{{ j.kelas }}</td><td>{{ j.mapel }}</td><td>{{ j.guru }}</td></tr>
+        </table>
+        <div v-else class="empty">Belum ada jadwal</div>
+      </div>
+
+      <!-- ABSENSI GURU -->
+      <div v-if="page==='absensi-guru'" class="panel">
+        <div class="toolbar">
+          <input type="date" v-model="absGTanggal">
+          <button class="btn" @click="absenGuru('masuk')">🟢 Absen Masuk</button>
+          <button class="btn sec" @click="absenGuru('pulang')">🔴 Absen Pulang</button>
+        </div>
+        <table v-if="absGuru.length">
+          <tr><th>Nama</th><th>Peran</th><th>Masuk</th><th>Pulang</th><th>Status</th></tr>
+          <tr v-for="g in absGuru"><td><b>{{ g.nama }}</b></td><td>{{ roleLabelOf(g.role) }}</td><td>{{ g.jam_masuk || '-' }}</td><td>{{ g.jam_pulang || '-' }}</td>
+            <td><span v-if="g.status" class="badge" :class="'b-'+g.status">{{ g.status }}</span><span v-else class="empty">—</span></td></tr>
+        </table>
+      </div>
+
+      <!-- SPP -->
+      <div v-if="page==='spp'" class="panel">
+        <div class="toolbar">
+          <select v-model="sppBulan"><option value="">Semua Bulan</option><option v-for="b in bulanList" :value="b">{{ b }}</option></select>
+          <select v-model="sppStatus"><option value="">Semua Status</option><option value="belum">Belum</option><option value="lunas">Lunas</option></select>
+          <button class="btn" @click="modalSPP=true">⚙️ Generate Tagihan Bulan Baru</button>
+          <button class="btn" style="background:#25d366" @click="loadNotifWA" v-if="spp.length">💬 Kirim WA Tagihan</button>
+          <button class="btn sec" @click="exportCSV('spp')">⬇️ Ekspor Excel</button>
+        </div>
+        <table v-if="spp.length">
+          <tr><th>Siswa</th><th>Kelas</th><th>Bulan</th><th>Jumlah</th><th>Status</th><th>Tgl Bayar</th><th></th></tr>
+          <tr v-for="t in spp"><td><b>{{ t.siswa }}</b></td><td>{{ t.kelas }}</td><td>{{ t.bulan }} {{ t.tahun }}</td><td>{{ rp(t.jumlah) }}</td>
+            <td><span class="badge" :class="t.status==='lunas'?'b-lunas':'b-belum'">{{ t.status }}</span></td><td>{{ t.tgl_bayar || '-' }}</td>
+            <td><button v-if="t.status!=='lunas'" class="btn sm" @click="bayarSPP(t)">Tandai Lunas</button></td></tr>
+        </table>
+        <div v-else class="empty">Belum ada tagihan</div>
+      </div>
+
+      <!-- KEUANGAN -->
+      <div v-if="page==='keuangan'">
+        <div class="stats">
+          <div class="stat"><small>Pemasukan (SPP Lunas)</small><b>{{ rp(keu.total_pemasukan) }}</b></div>
+          <div class="stat warn"><small>Total Pengeluaran</small><b>{{ rp(keu.total_pengeluaran) }}</b></div>
+          <div class="stat alt"><small>Saldo Kas</small><b>{{ rp(keu.saldo) }}</b></div>
+        </div>
+        <div class="toolbar"><button class="btn sec" @click="exportCSV('keuangan')">⬇️ Unduh Buku Kas (Excel)</button></div>
+        <div class="grid2">
+          <div class="panel">
+            <h3>Catat Pengeluaran</h3>
+            <label>Uraian</label><input v-model="pengUraian" placeholder="mis. Beli spidol & alat tulis">
+            <label>Kategori</label>
+            <select v-model="pengKategori"><option>Operasional</option><option>ATK</option><option>Kegiatan</option><option>Gaji/Honor</option><option>Lain-lain</option></select>
+            <label>Jumlah (Rp)</label><input type="number" v-model.number="pengJumlah">
+            <div style="margin-top:14px"><button class="btn" @click="addPengeluaran">Simpan Pengeluaran</button></div>
+          </div>
+          <div class="panel">
+            <h3>Pengeluaran Terakhir</h3>
+            <table v-if="pengeluaran.length"><tr><th>Tanggal</th><th>Uraian</th><th>Jumlah</th></tr>
+              <tr v-for="p in pengeluaran.slice(0,8)"><td>{{ p.tanggal }}</td><td>{{ p.uraian }} <small style="color:var(--muted)">({{ p.kategori }})</small></td><td>{{ rp(p.jumlah) }}</td></tr></table>
+            <div v-else class="empty">Belum ada pengeluaran</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- AGENDA -->
+      <div v-if="page==='agenda'" class="panel">
+        <div class="toolbar"><button class="btn" @click="modalAgenda=true">+ Tambah Agenda</button></div>
+        <div v-for="a in agenda" class="pengumuman-item">
+          <b>📅 {{ a.judul }}</b><p>{{ a.deskripsi }}</p>
+          <small>{{ a.tanggal }} {{ a.waktu ? '· '+a.waktu.slice(0,5) : '' }} {{ a.lokasi ? '· 📍'+a.lokasi : '' }} · dibuat oleh {{ a.pembuat }}</small>
+        </div>
+        <div v-if="!agenda.length" class="empty">Belum ada agenda</div>
+      </div>
+
+      <!-- PENGUMUMAN -->
+      <div v-if="page==='pengumuman'" class="panel">
+        <div class="toolbar"><button class="btn" @click="modalPengumuman=true">+ Buat Pengumuman</button></div>
+        <div v-for="p in pengumuman" class="pengumuman-item">
+          <b>{{ p.judul }}</b><p>{{ p.isi }}</p>
+          <small>{{ p.pembuat }} · {{ fmtDate(p.created_at) }} · target: {{ p.target }}
+            <button v-if="['kepala_sekolah','tu'].includes(user.role)" class="btn warn sm" style="float:right" @click="delPengumuman(p)">Hapus</button></small>
+        </div>
+        <div v-if="!pengumuman.length" class="empty">Belum ada pengumuman</div>
+      </div>
+
+      <!-- PENGATURAN SEKOLAH -->
+      <div v-if="page==='pengaturan'" class="panel" style="max-width:640px">
+        <h3>🏫 Profil Sekolah</h3>
+        <label>Nama Sekolah / Lembaga</label><input v-model="set.nama_sekolah">
+        <div class="frow">
+          <div><label>NPSN</label><input v-model="set.npsn"></div>
+          <div><label>Kepala Sekolah</label><input v-model="set.kepala_sekolah"></div>
+        </div>
+        <label>Alamat</label><textarea v-model="set.alamat" rows="2"></textarea>
+        <div class="frow">
+          <div><label>Tahun Ajaran Aktif</label><input v-model="set.tahun_ajaran_aktif" placeholder="2026/2027"></div>
+          <div><label>Semester Aktif</label><select v-model="set.semester_aktif"><option value="ganjil">Ganjil</option><option value="genap">Genap</option></select></div>
+        </div>
+        <div style="margin-top:16px"><button class="btn" @click="saveSet">💾 Simpan Pengaturan</button></div>
+      </div>
+
+      <!-- AKUN SAYA -->
+      <div v-if="page==='akun'" class="panel" style="max-width:480px">
+        <h3>🔑 Ubah Password</h3>
+        <label>Password Lama</label><input type="password" v-model="pw.lama">
+        <label>Password Baru (min. 6 karakter)</label><input type="password" v-model="pw.baru">
+        <div style="margin-top:16px"><button class="btn" @click="savePw">Simpan Password Baru</button></div>
+        <p style="margin-top:16px;font-size:12.5px;color:var(--muted)">Login sebagai <b>{{ user.nama }}</b> ({{ roleLabel }})</p>
+      </div>
+
+      <!-- LOG AKTIVITAS -->
+      <div v-if="page==='log'" class="panel">
+        <h3>🕵️ Log Aktivitas Terakhir</h3>
+        <table v-if="logs.length">
+          <tr><th>Waktu</th><th>Pengguna</th><th>Aksi</th><th>Detail</th></tr>
+          <tr v-for="l in logs"><td style="white-space:nowrap">{{ l.waktu.slice(0,19).replace('T',' ') }}</td><td><b>{{ l.user }}</b></td><td><span class="badge b-proses">{{ l.aksi }}</span></td><td>{{ l.detail }}</td></tr>
+        </table>
+        <div v-else class="empty">Belum ada aktivitas</div>
+      </div>
+
+      <!-- USERS -->
+      <div v-if="page==='users'" class="panel">
+        <div class="toolbar"><button class="btn" @click="modalUser=true">+ Tambah Pengguna</button></div>
+        <table v-if="users.length"><tr><th>Nama</th><th>Email</th><th>Peran</th><th>NIP</th><th></th></tr>
+          <tr v-for="u in users"><td><b>{{ u.nama }}</b></td><td>{{ u.email }}</td><td>{{ roleLabelOf(u.role) }}</td><td>{{ u.nip }}</td>
+          <td><button class="btn sec sm" @click="resetPw(u)">Reset Password</button></td></tr></table>
+      </div>
+    </main>
+
+    <!-- MODALS -->
+    <div v-if="modalSiswa" class="modal-bg" @click.self="modalSiswa=false">
+      <div class="modal">
+        <h3>{{ formSiswa.id ? 'Edit' : 'Tambah' }} Siswa</h3>
+        <div class="frow">
+          <div><label>NIS</label><input v-model="formSiswa.nis"></div>
+          <div><label>NISN</label><input v-model="formSiswa.nisn"></div>
+        </div>
+        <label>Nama Lengkap *</label><input v-model="formSiswa.nama">
+        <div class="frow">
+          <div><label>Jenis Kelamin</label><select v-model="formSiswa.jk"><option value="L">Laki-laki</option><option value="P">Perempuan</option></select></div>
+          <div><label>Kelas *</label><input v-model="formSiswa.kelas" placeholder="mis. 1A"></div>
+        </div>
+        <div class="frow">
+          <div><label>Tanggal Lahir</label><input type="date" v-model="formSiswa.tgl_lahir"></div>
+          <div><label>Status</label><select v-model="formSiswa.status"><option>aktif</option><option>lulus</option><option>pindah</option><option>keluar</option></select></div>
+        </div>
+        <label>Alamat</label><textarea v-model="formSiswa.alamat" rows="2"></textarea>
+        <div class="frow">
+          <div><label>Nama Orang Tua</label><input v-model="formSiswa.nama_ortu"></div>
+          <div><label>HP Orang Tua</label><input v-model="formSiswa.hp_ortu"></div>
+        </div>
+        <div style="margin-top:18px;display:flex;gap:10px">
+          <button class="btn" @click="saveSiswa">Simpan</button>
+          <button class="btn sec" @click="modalSiswa=false">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="modalNilai" class="modal-bg" @click.self="modalNilai=false">
+      <div class="modal">
+        <h3>Input Nilai</h3>
+        <label>Siswa *</label>
+        <select v-model="formNilai.siswa_id"><option v-for="s in siswa" :value="s.id">{{ s.nama }} ({{ s.kelas }})</option></select>
+        <div class="frow">
+          <div><label>Mata Pelajaran *</label><input v-model="formNilai.mapel" list="mapels"><datalist id="mapels"><option v-for="m in mapelList" :value="m"></option></datalist></div>
+          <div><label>Jenis *</label><select v-model="formNilai.jenis"><option value="tugas">Tugas</option><option value="uh">Ulangan Harian</option><option value="pts">PTS</option><option value="pas">PAS</option></select></div>
+        </div>
+        <div class="frow">
+          <div><label>Semester</label><select v-model="formNilai.semester"><option value="ganjil">Ganjil</option><option value="genap">Genap</option></select></div>
+          <div><label>Tahun Ajaran</label><input v-model="formNilai.tahun_ajaran"></div>
+        </div>
+        <label>Nilai (0–100)</label><input type="number" v-model.number="formNilai.nilai" min="0" max="100">
+        <div style="margin-top:18px;display:flex;gap:10px">
+          <button class="btn" @click="saveNilai">Simpan</button>
+          <button class="btn sec" @click="modalNilai=false">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="modalHafalan" class="modal-bg" @click.self="modalHafalan=false">
+      <div class="modal">
+        <h3>Catat Setoran Hafalan</h3>
+        <label>Siswa *</label>
+        <select v-model="formHafalan.siswa_id"><option v-for="s in siswa" :value="s.id">{{ s.nama }} ({{ s.kelas }})</option></select>
+        <div class="frow">
+          <div><label>Surah *</label><input v-model="formHafalan.surah" list="surahs"><datalist id="surahs"><option v-for="s in surahList" :value="s"></option></datalist></div>
+          <div><label>Status *</label><select v-model="formHafalan.status"><option value="baru">Baru</option><option value="proses">Proses</option><option value="lancar">Lancar</option><option value="murojaah">Murojaah</option></select></div>
+        </div>
+        <div class="frow">
+          <div><label>Ayat Dari</label><input type="number" v-model.number="formHafalan.ayat_dari"></div>
+          <div><label>Ayat Sampai</label><input type="number" v-model.number="formHafalan.ayat_sampai"></div>
+        </div>
+        <label>Catatan</label><textarea v-model="formHafalan.catatan" rows="2"></textarea>
+        <div style="margin-top:18px;display:flex;gap:10px">
+          <button class="btn" @click="saveHafalan">Simpan</button>
+          <button class="btn sec" @click="modalHafalan=false">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="modalSPP" class="modal-bg" @click.self="modalSPP=false">
+      <div class="modal">
+        <h3>Generate Tagihan SPP</h3>
+        <div class="frow">
+          <div><label>Bulan *</label><select v-model="formSPP.bulan"><option v-for="b in bulanList" :value="b">{{ b }}</option></select></div>
+          <div><label>Tahun *</label><input v-model="formSPP.tahun" placeholder="2026"></div>
+        </div>
+        <label>Jumlah per Siswa (Rp, kosongkan = default Rp75.000)</label>
+        <input type="number" v-model.number="formSPP.jumlah">
+        <div style="margin-top:18px;display:flex;gap:10px">
+          <button class="btn" @click="generateSPP">Generate</button>
+          <button class="btn sec" @click="modalSPP=false">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="modalAgenda" class="modal-bg" @click.self="modalAgenda=false">
+      <div class="modal">
+        <h3>Tambah Agenda</h3>
+        <label>Judul *</label><input v-model="formAgenda.judul">
+        <label>Deskripsi</label><textarea v-model="formAgenda.deskripsi" rows="2"></textarea>
+        <div class="frow">
+          <div><label>Tanggal *</label><input type="date" v-model="formAgenda.tanggal"></div>
+          <div><label>Waktu</label><input type="time" v-model="formAgenda.waktu"></div>
+        </div>
+        <label>Lokasi</label><input v-model="formAgenda.lokasi">
+        <div style="margin-top:18px;display:flex;gap:10px">
+          <button class="btn" @click="saveAgenda">Simpan</button>
+          <button class="btn sec" @click="modalAgenda=false">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="modalPengumuman" class="modal-bg" @click.self="modalPengumuman=false">
+      <div class="modal">
+        <h3>Buat Pengumuman</h3>
+        <label>Judul *</label><input v-model="formPengumuman.judul">
+        <label>Isi *</label><textarea v-model="formPengumuman.isi" rows="4"></textarea>
+        <label>Target</label>
+        <select v-model="formPengumuman.target"><option value="semua">Semua</option><option value="guru">Guru</option><option value="siswa">Siswa/Orang Tua</option><option value="tu">Tata Usaha</option></select>
+        <div style="margin-top:18px;display:flex;gap:10px">
+          <button class="btn" @click="savePengumuman">Terbitkan</button>
+          <button class="btn sec" @click="modalPengumuman=false">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="modalJadwal" class="modal-bg" @click.self="modalJadwal=false">
+      <div class="modal">
+        <h3>Tambah Jadwal Pelajaran</h3>
+        <div class="frow">
+          <div><label>Kelas *</label><input v-model="formJadwal.kelas" placeholder="mis. 1A"></div>
+          <div><label>Hari *</label><select v-model="formJadwal.hari"><option v-for="h in ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu']">{{ h }}</option></select></div>
+        </div>
+        <div class="frow">
+          <div><label>Jam Mulai</label><input type="time" v-model="formJadwal.jam_mulai"></div>
+          <div><label>Jam Selesai</label><input type="time" v-model="formJadwal.jam_selesai"></div>
+        </div>
+        <label>Mata Pelajaran *</label><input v-model="formJadwal.mapel" list="mapels">
+        <label>Guru</label>
+        <select v-model="formJadwal.guru_id"><option :value="0">— Pilih Guru —</option><option v-for="u in users.filter(x=>x.role==='guru')" :value="u.id">{{ u.nama }}</option></select>
+        <div style="margin-top:18px;display:flex;gap:10px">
+          <button class="btn" @click="saveJadwal">Simpan</button>
+          <button class="btn sec" @click="modalJadwal=false">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="modalUser" class="modal-bg" @click.self="modalUser=false">
+      <div class="modal">
+        <h3>Tambah Pengguna</h3>
+        <label>Nama *</label><input v-model="formUser.nama">
+        <div class="frow">
+          <div><label>Email *</label><input v-model="formUser.email"></div>
+          <div><label>Password *</label><input v-model="formUser.password"></div>
+        </div>
+        <div class="frow">
+          <div><label>Peran *</label><select v-model="formUser.role"><option value="guru">Guru</option><option value="tu">Tata Usaha</option><option value="kepala_sekolah">Kepala Sekolah</option></select></div>
+          <div><label>NIP</label><input v-model="formUser.nip"></div>
+        </div>
+        <div style="margin-top:18px;display:flex;gap:10px">
+          <button class="btn" @click="saveUser">Simpan</button>
+          <button class="btn sec" @click="modalUser=false">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="modalBulk" class="modal-bg" @click.self="modalBulk=false">
+      <div class="modal" style="max-width:560px">
+        <h3>⚡ Input Nilai Massal</h3>
+        <div class="frow">
+          <div><label>Kelas *</label>
+            <select v-model="bulk.kelas" @change="loadBulkSiswa"><option value="">— Pilih —</option><option v-for="k in kelasList" :value="k">{{ k }}</option></select></div>
+          <div><label>Mata Pelajaran *</label><input v-model="bulk.mapel" list="mapels"></div>
+        </div>
+        <div class="frow">
+          <div><label>Jenis *</label><select v-model="bulk.jenis"><option value="tugas">Tugas</option><option value="uh">Ulangan Harian</option><option value="pts">PTS</option><option value="pas">PAS</option></select></div>
+          <div><label>Semester</label><select v-model="bulk.semester"><option value="ganjil">Ganjil</option><option value="genap">Genap</option></select></div>
+        </div>
+        <label>Isi nilai per siswa (kosong = dilewati)</label>
+        <div style="max-height:300px;overflow-y:auto;border:1px solid var(--border);border-radius:10px;padding:8px">
+          <div v-for="(it,i) in bulk.items" :key="it.siswa_id" style="display:flex;align-items:center;gap:10px;padding:4px 2px">
+            <span style="flex:1;font-size:13.5px">{{ i+1 }}. <b>{{ it.nama }}</b></span>
+            <input type="number" min="0" max="100" v-model.number="it.nilai" placeholder="0-100" style="width:90px">
+          </div>
+          <div v-if="!bulk.items.length" class="empty">Pilih kelas dulu</div>
+        </div>
+        <div style="margin-top:16px;display:flex;gap:10px">
+          <button class="btn" @click="saveBulk" :disabled="!bulk.items.length">Simpan Semua</button>
+          <button class="btn sec" @click="modalBulk=false">Batal</button>
+        </div>
+      </div>
+    </div>
+
+    <div v-if="modalWA" class="modal-bg" @click.self="modalWA=false">
+      <div class="modal" style="max-width:600px">
+        <h3>💬 Pengingat WA — SPP Belum Lunas</h3>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px">Klik tombol untuk membuka WhatsApp dengan pesan siap kirim ke orang tua.</p>
+        <div style="max-height:340px;overflow-y:auto">
+          <div v-for="(p,i) in waList" :key="i" style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)">
+            <div style="flex:1"><b style="font-size:13.5px">{{ p.nama }}</b><div style="font-size:11.5px;color:var(--muted)">{{ p.hp }}</div></div>
+            <a :href="p.link_wa" target="_blank" class="btn sm" style="background:#25d366;text-decoration:none">Kirim WA</a>
+          </div>
+          <div v-if="!waList.length" class="empty">Tidak ada tagihan belum lunas dengan nomor HP tercatat 🎉</div>
+        </div>
+        <div style="margin-top:14px"><button class="btn sec" @click="modalWA=false">Tutup</button></div>
+      </div>
+    </div>
+
+    <div v-if="toast" class="toast" :class="{err: toastErr}">{{ toast }}</div>
+  </div>
+</div>
+
+<script>
+const { createApp, ref, computed, onMounted } = Vue;
+createApp({
+  setup() {
+    const API = location.origin; // API & frontend served from same origin via Go
+    const token = ref(localStorage.getItem('simaka_token') || '');
+    const user = ref(JSON.parse(localStorage.getItem('simaka_user') || 'null') || {});
+    const page = ref('dashboard');
+    const loading = ref(false);
+    const toast = ref(''); const toastErr = ref(false);
+
+    const login = ref({ email: '', password: '' });
+    const dash = ref({});
+    const siswa = ref([]); const nilai = ref([]); const hafalan = ref([]);
+    const jadwal = ref([]); const spp = ref([]); const pengeluaran = ref([]);
+    const agenda = ref([]); const pengumuman = ref([]); const users = ref([]);
+    const absSiswa = ref([]); const absGuru = ref([]); const keu = ref({});
+    const absTanggal = ref(new Date().toISOString().slice(0,10));
+    const absKelas = ref(''); const absGTanggal = ref(new Date().toISOString().slice(0,10));
+    const qSiswa = ref(''); const filterKelas = ref(''); const filterKelasN = ref('');
+    const filterMapel = ref(''); const filterKelasJ = ref('');
+    const sppBulan = ref(''); const sppStatus = ref('');
+    const pengUraian = ref(''); const pengKategori = ref('Operasional'); const pengJumlah = ref(null);
+    const modalSiswa = ref(false); const modalNilai = ref(false); const modalHafalan = ref(false);
+    const modalSPP = ref(false); const modalAgenda = ref(false); const modalPengumuman = ref(false);
+    const modalJadwal = ref(false); const modalUser = ref(false);
+    const formSiswa = ref({}); const formNilai = ref({ semester:'ganjil', tahun_ajaran:'2026/2027' });
+    const formHafalan = ref({}); const formSPP = ref({ tahun: String(new Date().getFullYear()) });
+    const formAgenda = ref({}); const formPengumuman = ref({ target:'semua' });
+    const formJadwal = ref({}); const formUser = ref({ role:'guru' });
+    const rapor = ref(null); const raporSiswa = ref(null); const raporTA = ref('2026/2027');
+    const modalBulk = ref(false);
+    const bulk = ref({ kelas:'', mapel:'', jenis:'tugas', semester:'ganjil', items:[] });
+    const set = ref({}); const logs = ref([]); const pw = ref({lama:'',baru:''});
+    const raporCatatan = ref({catatan_wali:'',ekstrakurikuler:'',prestasi:''});
+    const mode = ref('login'); const daftar = ref({});
+    const langganan = ref({status:'aktif',trial_sisa_hari:0}); const modalWA = ref(false); const waList = ref([]);
+    const siswaData = ref([]); const siswaPage = ref(1); const siswaPages = ref(1);
+    let siswaTimer = null;
+
+    const bulanList = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    const mapelList = ['Matematika','Bahasa Indonesia','Bahasa Arab','IPA','IPS','PAI','PJOK','Seni','Prakarya','Bahasa Inggris','Tahfidz'];
+    const surahList = ['Al-Fatihah','Al-Baqarah','Ali Imran','An-Nisa','Al-Maidah','Al-Anam','Al-Araf','Al-Anfal','At-Taubah','Yunus','Yusuf','Ar-Rad','Ibrahim','Al-Hijr','An-Nahl','Al-Isra','Al-Kahfi','Maryam','Taha','Al-Ankabut','Ar-Rum','Luqman','As-Sajdah','Ya-Sin','Al-Mulk','Al-Qalam','Al-Haqqah','Al-Muzzammil','Al-Muddatsir','Al-Qiyamah','An-Naba','An-Nazi`at','Abasa','At-Takwir','Al-Insyiqaq','Al-Buruj','At-Thariq','Al-A`la','Al-Ghasyiyah','Al-Fajr','Al-Balad','Asy-Syams','Al-Lail','Ad-Duha','Al-Insyirah','Al-Qadr','Al-Alaq','At-Tin','Al-Insyirotah','Al-Fil','Quraisy','Al-Ma`un','Al-Kautsar','Al-Kafirun','An-Nasr','Al-Lahab','Al-Ikhlas','Al-Falaq','An-Nas'];
+    const kelasList = computed(() => [...new Set(siswa.value.map(s => s.kelas))].sort());
+    const filteredSiswa = computed(() => siswa.value.filter(s =>
+      (!filterKelas.value || s.kelas === filterKelas.value) &&
+      (!qSiswa.value || (s.nama+s.nis).toLowerCase().includes(qSiswa.value.toLowerCase()))));
+
+    const roleLabel = computed(() => ({kepala_sekolah:'Kepala Sekolah', guru:'Guru', tu:'Tata Usaha'}[user.value.role] || ''));
+    const initials = computed(() => (user.value.nama || '?').split(' ').slice(0,2).map(w=>w[0]).join(''));
+    const pages = {dashboard:'Dashboard', siswa:'Data Siswa', absensi:'Absensi Siswa', nilai:'Nilai', rapor:'Rapor Siswa', hafalan:'Setoran Hafalan', jadwal:'Jadwal Pelajaran', 'absensi-guru':'Absensi Guru & Pegawai', spp:'SPP — Pembayaran Siswa', keuangan:'Keuangan Sekolah', agenda:'Agenda Kegiatan', pengumuman:'Pengumuman', users:'Manajemen Pengguna', log:'Log Aktivitas', pengaturan:'Profil Sekolah', akun:'Akun Saya'};
+    const pageTitle = computed(() => pages[page.value] || '');
+    const todayID = new Date().toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+
+    function showToast(m, err=false){ toast.value = m; toastErr.value = err; setTimeout(()=>toast.value='', 2800); }
+    function rp(n){ return 'Rp ' + Number(n||0).toLocaleString('id-ID'); }
+    function fmtDate(s){ try { return new Date(s).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}); } catch(e){ return s; } }
+    function roleLabelOf(r){ return ({kepala_sekolah:'Kepala Sekolah', guru:'Guru', tu:'Tata Usaha'})[r] || r; }
+
+    async function api(path, opts={}) {
+      const headers = {'Content-Type':'application/json', ...(token.value ? {Authorization:'Bearer '+token.value} : {})};
+      const res = await fetch(API + path, {...opts, headers});
+      if (res.status === 401) { logout(); throw new Error('Sesi berakhir'); }
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Terjadi kesalahan');
+      return data;
+    }
+    async function load(p) {
+      try {
+        if (p==='dashboard'){ dash.value = await api('/api/dashboard'); load('pengumuman'); }
+        if (p==='siswa') { const r = await api('/api/siswa?page='+siswaPage.value+'&limit=20'+(filterKelas.value?'&kelas='+filterKelas.value:'')+(qSiswa.value?'&q='+encodeURIComponent(qSiswa.value):'')); siswaData.value = r.data; siswaPages.value = r.total_pages; siswa.value = r.data; }
+        if (p==='absensi') absSiswa.value = await api('/api/absensi-siswa?tanggal='+absTanggal.value+(absKelas.value?'&kelas='+absKelas.value:''));
+        if (p==='nilai') { const q=new URLSearchParams(); if(filterKelasN.value)q.set('kelas',filterKelasN.value); if(filterMapel.value)q.set('mapel',filterMapel.value); nilai.value = await api('/api/nilai?'+q); }
+        if (p==='hafalan') hafalan.value = await api('/api/hafalan');
+        if (p==='jadwal') jadwal.value = await api('/api/jadwal'+(filterKelasJ.value?'?kelas='+filterKelasJ.value:''));
+        if (p==='absensi-guru') absGuru.value = await api('/api/absensi-guru?tanggal='+absGTanggal.value);
+        if (p==='spp') { const q=new URLSearchParams(); if(sppBulan.value)q.set('bulan',sppBulan.value); if(sppStatus.value)q.set('status',sppStatus.value); spp.value = await api('/api/spp?'+q); }
+        if (p==='keuangan'){ keu.value = await api('/api/keuangan/ringkasan'); pengeluaran.value = await api('/api/pengeluaran'); }
+        if (p==='agenda') agenda.value = await api('/api/agenda');
+        if (p==='pengumuman') pengumuman.value = await api('/api/pengumuman');
+        if (p==='users') users.value = await api('/api/users');
+        if (p==='log') logs.value = await api('/api/activity-log');
+        if (p==='pengaturan') set.value = await api('/api/pengaturan');
+      } catch(e){ showToast(e.message, true); }
+    }
+
+    async function doLogin(){
+      loading.value = true;
+      try {
+        const r = await api('/api/login', {method:'POST', body: JSON.stringify(login.value)});
+        token.value = r.token; user.value = r.user;
+        localStorage.setItem('simaka_token', r.token);
+        localStorage.setItem('simaka_user', JSON.stringify(r.user));
+        showToast('Selamat datang, '+r.user.nama.split(',')[0]+'! 🎉');
+        load('dashboard');
+        api('/api/langganan').then(l=>langganan.value=l).catch(()=>{});
+      } catch(e){ showToast(e.message, true); }
+      loading.value = false;
+    }
+    async function doDaftar(){
+      loading.value = true;
+      try {
+        const r = await api('/api/daftar', {method:'POST', body: JSON.stringify(daftar.value)});
+        showToast(r.pesan + ' Silakan masuk.');
+        login.value = {email: daftar.value.email, password: daftar.value.password};
+        mode.value = 'login';
+      } catch(e){ showToast(e.message, true); }
+      loading.value = false;
+    }
+    async function loadNotifWA(){
+      const bulan = sppBulan.value || bulanList[new Date().getMonth()];
+      const tahun = String(new Date().getFullYear());
+      try {
+        const r = await api('/api/notif/spp?bulan='+encodeURIComponent(bulan)+'&tahun='+encodeURIComponent(tahun));
+        waList.value = r.pesan; modalWA.value = true;
+      } catch(e){ showToast(e.message, true); }
+    }
+    function logout(){ token.value=''; user.value={}; localStorage.removeItem('simaka_token'); localStorage.removeItem('simaka_user'); }
+
+    // === Rapor, ekspor, nilai massal ===
+    function fnum(v){ return v == null ? '-' : Number(v).toFixed(1); }
+    function debouncedSiswa(){ clearTimeout(siswaTimer); siswaTimer = setTimeout(()=>{ siswaPage.value=1; load('siswa'); }, 350); }
+    async function openRapor(){
+      try {
+        rapor.value = await api('/api/rapor/'+raporSiswa.value+'?tahun_ajaran='+encodeURIComponent(raporTA.value));
+        raporCatatan.value = await api('/api/rapor-catatan/'+raporSiswa.value+'?tahun_ajaran='+encodeURIComponent(raporTA.value));
+      }
+      catch(e){ showToast(e.message, true); }
+    }
+    async function saveCatatan(){
+      try {
+        await api('/api/rapor-catatan/'+raporSiswa.value, {method:'PUT', body: JSON.stringify({...raporCatatan.value, tahun_ajaran: raporTA.value})});
+        showToast('Catatan rapor tersimpan ✅');
+      } catch(e){ showToast(e.message, true); }
+    }
+    function cetakRapor(){ window.open('/api/rapor-cetak/'+raporSiswa.value+'?tahun_ajaran='+encodeURIComponent(raporTA.value)+'&token='+encodeURIComponent(token.value), '_blank'); }
+    function exportCSV(jenis){
+      const base = {absensi:'/api/export/absensi?bulan=', spp:'/api/export/spp', nilai:'/api/export/nilai', keuangan:'/api/export/keuangan'}[jenis];
+      let url = base;
+      if (jenis==='absensi') { const d=absTanggal.value||''; url += d.slice(0,7); }
+      fetch(url, {headers:{Authorization:'Bearer '+token.value}})
+        .then(async r => { if(!r.ok) throw new Error('Gagal ekspor'); const b=await r.blob();
+          const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='rekap-'+jenis+'.csv'; a.click(); })
+        .catch(e=>showToast(e.message,true));
+    }
+    function openBulk(){ bulk.value = {kelas:'', mapel:'', jenis:'tugas', semester:'ganjil', items:[]}; modalBulk.value = true; }
+    async function loadBulkSiswa(){
+      if (!bulk.value.kelas) { bulk.value.items = []; return; }
+      try {
+        const list = await api('/api/siswa-by-kelas?kelas='+encodeURIComponent(bulk.value.kelas));
+        bulk.value.items = list.map(s => ({siswa_id: s.id, nama: s.nama, nilai: null}));
+      } catch(e){ showToast(e.message, true); }
+    }
+    async function saveBulk(){
+      try {
+        const r = await api('/api/nilai-bulk', {method:'POST', body: JSON.stringify({
+          kelas: bulk.value.kelas, mapel: bulk.value.mapel, jenis: bulk.value.jenis, semester: bulk.value.semester,
+          tahun_ajaran: '2026/2027', items: bulk.value.items.filter(i=>i.nilai>0).map(i=>({siswa_id:i.siswa_id, nilai:i.nilai}))
+        })});
+        modalBulk.value = false;
+        showToast(r.saved+' nilai tersimpan ✅'+(r.skipped? ' ('+r.skipped+' dilewati)':''));
+        load('nilai');
+      } catch(e){ showToast(e.message, true); }
+    }
+
+    // siswa
+    function openSiswa(s){ formSiswa.value = s ? {...s} : {jk:'L', status:'aktif'}; modalSiswa.value = true; }
+    async function saveSiswa(){
+      try {
+        if (formSiswa.value.id) await api('/api/siswa/'+formSiswa.value.id, {method:'PUT', body:JSON.stringify(formSiswa.value)});
+        else await api('/api/siswa', {method:'POST', body:JSON.stringify(formSiswa.value)});
+        modalSiswa.value=false; showToast('Data siswa tersimpan ✅'); load('siswa');
+      } catch(e){ showToast(e.message, true); }
+    }
+    async function delSiswa(s){ if(!confirm('Hapus '+s.nama+'?')) return; await api('/api/siswa/'+s.id,{method:'DELETE'}); showToast('Siswa dihapus'); load('siswa'); }
+
+    // absensi siswa
+    async function saveAbsensi(){
+      try {
+        await api('/api/absensi-siswa', {method:'POST', body: JSON.stringify({
+          tanggal: absTanggal.value, items: absSiswa.value.filter(a=>a.status).map(a=>({siswa_id:a.siswa_id,status:a.status}))
+        })});
+        showToast('Absensi tersimpan ✅');
+      } catch(e){ showToast(e.message, true); }
+    }
+    // absensi guru
+    async function absenGuru(tipe){
+      try { await api('/api/absensi-guru/'+tipe, {method:'POST'}); showToast('Absen '+tipe+' berhasil ✅'); load('absensi-guru'); }
+      catch(e){ showToast(e.message, true); }
+    }
+    // nilai
+    function openNilai(){ formNilai.value = {semester:'ganjil', tahun_ajaran:'2026/2027'}; modalNilai.value=true; }
+    async function saveNilai(){
+      try { await api('/api/nilai',{method:'POST',body:JSON.stringify(formNilai.value)}); modalNilai.value=false; showToast('Nilai tersimpan ✅'); load('nilai'); }
+      catch(e){ showToast(e.message,true); }
+    }
+    async function saveHafalan(){
+      try { await api('/api/hafalan',{method:'POST',body:JSON.stringify(formHafalan.value)}); modalHafalan.value=false; showToast('Setoran hafalan tercatat ✅'); load('hafalan'); }
+      catch(e){ showToast(e.message,true); }
+    }
+    async function generateSPP(){
+      try { const r = await api('/api/spp/generate',{method:'POST',body:JSON.stringify(formSPP.value)}); modalSPP.value=false; showToast(r.generated+' tagihan dibuat ✅'); load('spp'); }
+      catch(e){ showToast(e.message,true); }
+    }
+    async function bayarSPP(t){
+      try { await api('/api/spp/'+t.id+'/bayar',{method:'POST',body:'{"metode":"tunai"}'}); showToast('Pembayaran '+t.siswa+' tercatat ✅'); load('spp'); }
+      catch(e){ showToast(e.message,true); }
+    }
+    async function addPengeluaran(){
+      try { await api('/api/pengeluaran',{method:'POST',body:JSON.stringify({uraian:pengUraian.value,kategori:pengKategori.value,jumlah:pengJumlah.value})});
+        pengUraian.value=''; pengJumlah.value=null; showToast('Pengeluaran tercatat ✅'); load('keuangan'); }
+      catch(e){ showToast(e.message,true); }
+    }
+    async function saveAgenda(){
+      try { await api('/api/agenda',{method:'POST',body:JSON.stringify(formAgenda.value)}); modalAgenda.value=false; showToast('Agenda ditambahkan ✅'); load('agenda'); }
+      catch(e){ showToast(e.message,true); }
+    }
+    async function savePengumuman(){
+      try { await api('/api/pengumuman',{method:'POST',body:JSON.stringify(formPengumuman.value)}); modalPengumuman.value=false; showToast('Pengumuman diterbitkan ✅'); load('pengumuman'); }
+      catch(e){ showToast(e.message,true); }
+    }
+    async function delPengumuman(p){ await api('/api/pengumuman/'+p.id,{method:'DELETE'}); showToast('Pengumuman dihapus'); load('pengumuman'); }
+    async function saveJadwal(){
+      try { await api('/api/jadwal',{method:'POST',body:JSON.stringify(formJadwal.value)}); modalJadwal.value=false; showToast('Jadwal ditambahkan ✅'); load('jadwal'); }
+      catch(e){ showToast(e.message,true); }
+    }
+    async function saveUser(){
+      try { await api('/api/users',{method:'POST',body:JSON.stringify(formUser.value)}); modalUser.value=false; showToast('Pengguna ditambahkan ✅'); load('users'); }
+      catch(e){ showToast(e.message,true); }
+    }
+    async function saveSet(){
+      try { await api('/api/pengaturan',{method:'PUT',body:JSON.stringify(set.value)}); showToast('Pengaturan tersimpan ✅'); }
+      catch(e){ showToast(e.message,true); }
+    }
+    async function savePw(){
+      try { await api('/api/ubah-password',{method:'POST',body:JSON.stringify(pw.value)}); pw.value={lama:'',baru:''}; showToast('Password diperbarui ✅'); }
+      catch(e){ showToast(e.message,true); }
+    }
+    async function resetPw(u){
+      if(!confirm('Reset password '+u.nama+'? Password baru akan ditampilkan.')) return;
+      try {
+        const r = await api('/api/users/'+u.id+'/reset-password',{method:'POST'});
+        prompt('Password baru untuk '+u.nama+':', r.password_baru);
+      } catch(e){ showToast(e.message,true); }
+    }
+
+    onMounted(() => { if (token.value) { load('dashboard'); api('/api/pengaturan').then(p=>{ set.value=p; raporTA.value=p.tahun_ajaran_aktif||'2026/2027'; }).catch(()=>{}); } });
+    return { API, token, user, page, loading, toast, toastErr, login, dash, siswa, nilai, hafalan, jadwal, spp, pengeluaran, agenda, pengumuman, users,
+      absSiswa, absGuru, keu, absTanggal, absKelas, absGTanggal, qSiswa, filterKelas, filterKelasN, filterMapel, filterKelasJ, sppBulan, sppStatus,
+      pengUraian, pengKategori, pengJumlah, modalSiswa, modalNilai, modalHafalan, modalSPP, modalAgenda, modalPengumuman, modalJadwal, modalUser,
+      formSiswa, formNilai, formHafalan, formSPP, formAgenda, formPengumuman, formJadwal, formUser, rapor, raporSiswa, raporTA, modalBulk, bulk,
+      set, logs, pw, raporCatatan, siswaData, siswaPage, siswaPages,
+      mode, daftar, langganan, modalWA, waList,
+ bulanList, mapelList, surahList, kelasList, filteredSiswa, roleLabel, initials, pageTitle, todayID,
+ showToast, rp, fmtDate, roleLabelOf, fnum, openRapor, cetakRapor, exportCSV, openBulk, loadBulkSiswa, saveBulk, debouncedSiswa, saveCatatan,
+ doLogin, doDaftar, loadNotifWA, logout, load, openSiswa, saveSiswa, delSiswa, saveAbsensi, absenGuru,
+      openNilai, saveNilai, saveHafalan, generateSPP, bayarSPP, addPengeluaran, saveAgenda, savePengumuman, delPengumuman, saveJadwal, saveUser, saveSet, savePw, resetPw };
+  }
+}).mount('#app');
+</script>
+</body>
+</html>
