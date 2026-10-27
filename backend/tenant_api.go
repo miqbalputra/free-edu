@@ -9,6 +9,119 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
+// ---------- PLAN LIMITS (Free / Sekolah / Yayasan) ----------
+
+// planOf: paket aktif sekolah (trial dihitung = semua fitur terbuka selama trial)
+func planOf(sekolahID int) string {
+	var status, paket string
+	if err := db.QueryRow(`SELECT s.status, l.paket FROM sekolah s
+		LEFT JOIN langganan l ON l.sekolah_id=s.id AND l.status='aktif'
+		WHERE s.id=$1`, sekolahID).Scan(&status, &paket); err != nil {
+		return "gratis"
+	}
+	if status == "trial" {
+		return "sekolah" // trial = full fitur
+	}
+	if paket == "" {
+		paket = "gratis"
+	}
+	return paket
+}
+
+type planLimits struct {
+	MaxSiswa, MaxUser int
+	Export, Rekap     bool
+}
+
+func limitsFor(paket string) planLimits {
+	switch paket {
+	case "yayasan":
+		return planLimits{MaxSiswa: 0, MaxUser: 0, Export: true, Rekap: true} // 0 = unlimited
+	case "sekolah":
+		return planLimits{MaxSiswa: 500, MaxUser: 20, Export: true, Rekap: true}
+	default:
+		return planLimits{MaxSiswa: 30, MaxUser: 3, Export: false, Rekap: false}
+	}
+}
+
+// planMW: middleware fitur — tolak 402 kalau plan tidak termasuk fitur
+func planMW(fitur string, h http.HandlerFunc) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c := userFromContext(r)
+		if c == nil {
+			jsonErr(w, 401, "Unauthorized")
+			return
+		}
+		lim := limitsFor(planOf(c.SekolahID))
+		allowed := false
+		switch fitur {
+		case "export":
+			allowed = lim.Export
+		case "rekap":
+			allowed = lim.Rekap
+		}
+		if !allowed {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(402)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error":  "Fitur ini tersedia di paket Sekolah atau Yayasan. Silakan upgrade.",
+				"upgrade": "https://sistemflow.com",
+			})
+			return
+		}
+		h(w, r)
+	})
+}
+
+// planMWClaims: seperti planMW tapi untuk handler dengan Claims
+func planMWClaims(fitur string, h func(http.ResponseWriter, *http.Request, *Claims)) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c := userFromContext(r)
+		if c == nil {
+			jsonErr(w, 401, "Unauthorized")
+			return
+		}
+		lim := limitsFor(planOf(c.SekolahID))
+		allowed := false
+		switch fitur {
+		case "export":
+			allowed = lim.Export
+		case "rekap":
+			allowed = lim.Rekap
+		}
+		if !allowed {
+			w.Header().Set("Content-Type", "application/json")
+			w.WriteHeader(402)
+			json.NewEncoder(w).Encode(map[string]string{
+				"error":   "Fitur ini tersedia di paket Sekolah atau Yayasan. Silakan upgrade.",
+				"upgrade": "https://sistemflow.com",
+			})
+			return
+		}
+		h(w, r, c)
+	})
+}
+
+// cekKuota: return pesan error atau "" — untuk POST siswa/users
+func cekKuota(sekolahID int, jenis string) string {
+	lim := limitsFor(planOf(sekolahID))
+	if jenis == "siswa" && lim.MaxSiswa > 0 {
+		var n int
+		db.QueryRow(`SELECT COUNT(*) FROM siswa WHERE sekolah_id=$1 AND status='aktif'`, sekolahID).Scan(&n)
+		if n >= lim.MaxSiswa {
+			return "Paket Gratis dibatasi " + itoa(lim.MaxSiswa) + " siswa aktif. Upgrade ke paket Sekolah untuk lebih banyak."
+		}
+	}
+	if jenis == "user" && lim.MaxUser > 0 {
+		var n int
+		db.QueryRow(`SELECT COUNT(*) FROM users WHERE sekolah_id=$1`, sekolahID).Scan(&n)
+		if n >= lim.MaxUser {
+			return "Paket Gratis dibatasi " + itoa(lim.MaxUser) + " pengguna. Upgrade ke paket Sekolah untuk lebih banyak."
+		}
+	}
+	return ""
+}
+
 // cekLangganan: sekolah harus aktif/trial yang belum habis.
 func cekLangganan(sekolahID int) (bool, string) {
 	var status string
@@ -88,7 +201,19 @@ func handleLangganan(w http.ResponseWriter, r *http.Request) {
 	if sisa < 0 {
 		sisa = 0
 	}
-	respond(w, 200, map[string]interface{}{"status": status, "trial_sisa_hari": sisa})
+	paket := planOf(c.SekolahID)
+	lim := limitsFor(paket)
+	// kuota terpakai
+	var nSiswa, nUser int
+	db.QueryRow(`SELECT COUNT(*) FROM siswa WHERE sekolah_id=$1 AND status='aktif'`, c.SekolahID).Scan(&nSiswa)
+	db.QueryRow(`SELECT COUNT(*) FROM users WHERE sekolah_id=$1`, c.SekolahID).Scan(&nUser)
+	respond(w, 200, map[string]interface{}{
+		"status": status, "trial_sisa_hari": sisa,
+		"plan": paket,
+		"limit_siswa": lim.MaxSiswa, "limit_user": lim.MaxUser,
+		"pakai_siswa": nSiswa, "pakai_user": nUser,
+		"export": lim.Export, "rekap": lim.Rekap,
+	})
 }
 
 // ---------- NOTIFIKASI WA (link wa.me siap kirim) ----------

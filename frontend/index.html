@@ -224,7 +224,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
         <button :class="{active:page==='spp'}" @click="page='spp'">💰 SPP</button>
         <button v-if="user.role!=='guru'" :class="{active:page==='wali'}" @click="page='wali'">🧑‍💼 Wali Kelas</button>
         <button v-if="user.role!=='guru'" :class="{active:page==='keuangan'}" @click="page='keuangan'">🏦 Keuangan</button>
-        <button v-if="user.role!=='guru'" :class="{active:page==='rekap'}" @click="page='rekap'">📊 Laporan Rekap</button>
+        <button v-if="user.role!=='guru'" :class="{active:page==='rekap'}" @click="page='rekap'">📊 Laporan Rekap <span v-if="langganan.plan==='gratis'" title="Paket Sekolah/Yayasan" style="font-size:10px">🔒</span></button>
         <div class="sec">Umum</div>
         <button :class="{active:page==='agenda'}" @click="page='agenda'">📅 Agenda</button>
         <button :class="{active:page==='pengumuman'}" @click="page='pengumuman'">📢 Pengumuman</button>
@@ -251,7 +251,16 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
         <span style="font-size:20px">⏳</span>
         <div style="flex:1;font-size:13.5px">
           <b>Masa trial: sisa {{ langganan.trial_sisa_hari }} hari.</b>
-          Upgrade ke paket Sekolah (Rp75rb/bulan) untuk akses penuh tanpa batas — hubungi admin via WhatsApp.
+          Setelah trial berakhir, akun otomatis turun ke paket Gratis (maks 30 siswa, 3 pengguna, tanpa ekspor & laporan rekap).
+        </div>
+        <a href="https://wa.me/6281234567890?text=Halo%2C%20saya%20mau%20upgrade%20SIMAKA" target="_blank" class="btn" style="text-decoration:none;white-space:nowrap">Upgrade</a>
+      </div>
+
+      <!-- Banner plan gratis: kuota -->
+      <div v-if="langganan.plan==='gratis'" class="panel" style="background:#eef2ff;border:1.5px solid var(--primary);padding:14px 18px;margin-bottom:20px;display:flex;align-items:center;gap:12px">
+        <span style="font-size:20px">🆓</span>
+        <div style="flex:1;font-size:13.5px">
+          <b>Paket Gratis</b> — {{ langganan.pakai_siswa }}/{{ langganan.limit_siswa }} siswa · {{ langganan.pakai_user }}/{{ langganan.limit_user }} pengguna · ekspor & laporan rekap terkunci.
         </div>
         <a href="https://wa.me/6281234567890?text=Halo%2C%20saya%20mau%20upgrade%20SIMAKA" target="_blank" class="btn" style="text-decoration:none;white-space:nowrap">Upgrade</a>
       </div>
@@ -354,7 +363,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           <input type="date" v-model="absTanggal">
           <select v-model="absKelas"><option value="">Semua Kelas</option><option v-for="k in kelasList" :value="k">{{ k }}</option></select>
           <button class="btn" @click="saveAbsensi">💾 Simpan Absensi</button>
-          <button class="btn sec" @click="exportCSV('absensi')">⬇️ Ekspor Excel</button>
+          <button class="btn sec" @click="exportCSV('absensi')">⬇️ Ekspor Excel <span v-if="langganan.plan==='gratis'" style="font-size:10px">🔒</span></button>
         </div>
         <table v-if="absSiswa.length">
           <tr><th>Nama</th><th>Kelas</th><th style="width:220px">Status Kehadiran</th></tr>
@@ -375,7 +384,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           <select v-model="filterMapel"><option value="">Semua Mapel</option><option v-for="m in mapelList" :value="m">{{ m }}</option></select>
           <button class="btn" @click="openNilai()">+ Input Nilai</button>
           <button class="btn" style="background:var(--accent)" @click="openBulk">⚡ Nilai Massal</button>
-          <button class="btn sec" @click="exportCSV('nilai')">⬇️ Ekspor Excel</button>
+          <button class="btn sec" @click="exportCSV('nilai')">⬇️ Ekspor Excel <span v-if="langganan.plan==='gratis'" style="font-size:10px">🔒</span></button>
         </div>
         <table v-if="nilai.length">
           <tr><th>Siswa</th><th>Kelas</th><th>Mapel</th><th>Jenis</th><th>Semester</th><th>Tahun</th><th>Nilai</th><th></th></tr>
@@ -432,7 +441,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           <select v-model="sppStatus"><option value="">Semua Status</option><option value="belum">Belum</option><option value="lunas">Lunas</option></select>
           <button class="btn" @click="modalSPP=true">⚙️ Generate Tagihan Bulan Baru</button>
           <button class="btn" style="background:#25d366" @click="loadNotifWA" v-if="spp.length">💬 Kirim WA Tagihan</button>
-          <button class="btn sec" @click="exportCSV('spp')">⬇️ Ekspor Excel</button>
+          <button class="btn sec" @click="exportCSV('spp')">⬇️ Ekspor Excel <span v-if="langganan.plan==='gratis'" style="font-size:10px">🔒</span></button>
         </div>
         <table v-if="spp.length">
           <tr><th>Siswa</th><th>Kelas</th><th>Bulan</th><th>Jumlah</th><th>Status</th><th>Tgl Bayar</th><th></th></tr>
@@ -451,7 +460,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           <div class="stat warn"><small>Total Pengeluaran</small><b>{{ rp(keu.total_pengeluaran) }}</b></div>
           <div class="stat alt"><small>Saldo Kas</small><b>{{ rp(keu.saldo) }}</b></div>
         </div>
-        <div class="toolbar"><button class="btn sec" @click="exportCSV('keuangan')">⬇️ Unduh Buku Kas (Excel)</button></div>
+        <div class="toolbar"><button class="btn sec" @click="exportCSV('keuangan')">⬇️ Unduh Buku Kas (Excel) <span v-if="langganan.plan==='gratis'" style="font-size:10px">🔒</span></button></div>
         <div class="grid2">
           <div class="panel">
             <h3>Catat Pengeluaran</h3>

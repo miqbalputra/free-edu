@@ -70,16 +70,16 @@ func registerRoutes(mux *http.ServeMux) {
 	api.Handle("GET /api/dashboard", authMiddleware(http.HandlerFunc(handleDashboard)))
 
 	// Ekspor & rapor
-	api.Handle("GET /api/export/absensi", authMiddleware(http.HandlerFunc(handleExportAbsensi)))
-	api.Handle("GET /api/export/spp", authMiddleware(http.HandlerFunc(handleExportSPP)))
-	api.Handle("GET /api/export/nilai", authMiddleware(http.HandlerFunc(handleExportNilai)))
-	api.Handle("GET /api/export/keuangan", authMiddleware(http.HandlerFunc(handleExportKeuangan)))
+	api.Handle("GET /api/export/absensi", authMiddleware(planMW("export", handleExportAbsensi)))
+	api.Handle("GET /api/export/spp", authMiddleware(planMW("export", handleExportSPP)))
+	api.Handle("GET /api/export/nilai", authMiddleware(planMW("export", handleExportNilai)))
+	api.Handle("GET /api/export/keuangan", authMiddleware(planMW("export", handleExportKeuangan)))
 	api.Handle("GET /api/rapor/{id}", authMiddleware(http.HandlerFunc(handleRaporData)))
 	api.Handle("GET /api/rapor-cetak/{id}", http.HandlerFunc(handleCetakRapor))
 	api.Handle("GET /api/kwitansi/{id}", http.HandlerFunc(handleKwitansi))
 	api.Handle("GET /api/wali", authMiddleware(authedHandler(handleListWali)))
 	api.Handle("POST /api/wali", authMiddleware(roleMW(handleSetWali, "kepala_sekolah", "tu")))
-	api.Handle("GET /api/rekap", authMiddleware(roleMW(handleRekapBulanan, "kepala_sekolah", "tu")))
+	api.Handle("GET /api/rekap", authMiddleware(roleMWAuth(planMWClaims("rekap", handleRekapBulanan), "kepala_sekolah", "tu")))
 	api.Handle("GET /api/siswa-by-kelas", authMiddleware(http.HandlerFunc(handleSiswaByKelas)))
 	api.Handle("POST /api/nilai-bulk", authMiddleware(roleMW(handleBulkNilai, "guru", "kepala_sekolah")))
 
@@ -138,6 +138,24 @@ func authedHandler(h func(http.ResponseWriter, *http.Request, *Claims)) http.Han
 			return
 		}
 		h(w, r, c)
+	})
+}
+
+// roleMWAuth: roleMW yang menerima http.Handler (untuk kombinasi dengan planMW)
+func roleMWAuth(next http.Handler, roles ...string) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c := userFromContext(r)
+		if c == nil {
+			jsonErr(w, 401, "Unauthorized")
+			return
+		}
+		for _, role := range roles {
+			if c.Role == role {
+				next.ServeHTTP(w, r)
+				return
+			}
+		}
+		jsonErr(w, 403, "Akses ditolak untuk peran "+c.Role)
 	})
 }
 
@@ -260,6 +278,12 @@ func sval(m map[string]interface{}, k string) string {
 }
 
 func handleCreateSiswa(w http.ResponseWriter, r *http.Request, c *Claims) {
+	if msg := cekKuota(c.SekolahID, "siswa"); msg != "" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(402)
+		json.NewEncoder(w).Encode(map[string]string{"error": msg})
+		return
+	}
 	in, err := siswaFromRequest(r)
 	if err != nil {
 		jsonErr(w, 400, err.Error())
@@ -889,6 +913,12 @@ func handleListUsers(w http.ResponseWriter, r *http.Request, c *Claims) {
 }
 
 func handleCreateUser(w http.ResponseWriter, r *http.Request, c *Claims) {
+	if msg := cekKuota(c.SekolahID, "user"); msg != "" {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(402)
+		json.NewEncoder(w).Encode(map[string]string{"error": msg})
+		return
+	}
 	var in struct {
 		Nama, Email, Password, Role, NIP string
 	}
@@ -901,8 +931,8 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request, c *Claims) {
 		jsonErr(w, 400, "Role tidak valid")
 		return
 	}
-	_, err := db.Exec(`INSERT INTO users (nama,email,password,role,nip) VALUES ($1,$2,$3,$4,NULLIF($5,'-'))`,
-		in.Nama, strings.ToLower(in.Email), hashPass(in.Password), in.Role, in.NIP)
+	_, err := db.Exec(`INSERT INTO users (nama,email,password,role,nip,sekolah_id) VALUES ($1,$2,$3,$4,NULLIF($5,'-'),$6)`,
+		in.Nama, strings.ToLower(in.Email), hashPass(in.Password), in.Role, in.NIP, c.SekolahID)
 	if err != nil {
 		jsonErr(w, 500, "Email mungkin sudah dipakai: "+err.Error())
 		return
