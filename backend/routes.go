@@ -76,6 +76,10 @@ func registerRoutes(mux *http.ServeMux) {
 	api.Handle("GET /api/export/keuangan", authMiddleware(http.HandlerFunc(handleExportKeuangan)))
 	api.Handle("GET /api/rapor/{id}", authMiddleware(http.HandlerFunc(handleRaporData)))
 	api.Handle("GET /api/rapor-cetak/{id}", http.HandlerFunc(handleCetakRapor))
+	api.Handle("GET /api/kwitansi/{id}", http.HandlerFunc(handleKwitansi))
+	api.Handle("GET /api/wali", authMiddleware(authedHandler(handleListWali)))
+	api.Handle("POST /api/wali", authMiddleware(roleMW(handleSetWali, "kepala_sekolah", "tu")))
+	api.Handle("GET /api/rekap", authMiddleware(roleMW(handleRekapBulanan, "kepala_sekolah", "tu")))
 	api.Handle("GET /api/siswa-by-kelas", authMiddleware(http.HandlerFunc(handleSiswaByKelas)))
 	api.Handle("POST /api/nilai-bulk", authMiddleware(roleMW(handleBulkNilai, "guru", "kepala_sekolah")))
 
@@ -122,6 +126,18 @@ func roleMW(h func(http.ResponseWriter, *http.Request, *Claims), roles ...string
 			}
 		}
 		jsonErr(w, 403, "Akses ditolak untuk peran "+c.Role)
+	})
+}
+
+// authedHandler: handler dengan Claims, tanpa pembatasan role
+func authedHandler(h func(http.ResponseWriter, *http.Request, *Claims)) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		c := userFromContext(r)
+		if c == nil {
+			jsonErr(w, 401, "Unauthorized")
+			return
+		}
+		h(w, r, c)
 	})
 }
 

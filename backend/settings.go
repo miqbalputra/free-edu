@@ -269,3 +269,49 @@ func handleDeleteUser(w http.ResponseWriter, r *http.Request, c *Claims) {
 	logActivity(c.UserID, "hapus_user", "Menghapus pengguna ID "+itoa(id))
 	respond(w, 200, map[string]string{"ok": "1"})
 }
+
+// ---------- WALI KELAS (Fase C) ----------
+
+func handleListWali(w http.ResponseWriter, r *http.Request, c *Claims) {
+	rows, err := db.Query(`SELECT w.kelas, u.nama, u.id FROM wali_kelas w JOIN users u ON u.id=w.user_id WHERE w.sekolah_id=$1 ORDER BY w.kelas`, c.SekolahID)
+	if err != nil {
+		jsonErr(w, 500, err.Error())
+		return
+	}
+	defer rows.Close()
+	list := []map[string]interface{}{}
+	for rows.Next() {
+		var kelas, nama string
+		var uid int
+		rows.Scan(&kelas, &nama, &uid)
+		list = append(list, map[string]interface{}{"kelas": kelas, "wali": nama, "user_id": uid})
+	}
+	respond(w, 200, list)
+}
+
+func handleSetWali(w http.ResponseWriter, r *http.Request, c *Claims) {
+	var in struct {
+		Kelas  string `json:"kelas"`
+		UserID int    `json:"user_id"`
+	}
+	json.NewDecoder(r.Body).Decode(&in)
+	if in.Kelas == "" || in.UserID == 0 {
+		jsonErr(w, 400, "Kelas dan user wajib diisi")
+		return
+	}
+	// user harus sekolah sama & bukan kepala_sekolah (wali = guru/TU)
+	var sid int
+	var role string
+	if err := db.QueryRow(`SELECT COALESCE(sekolah_id,0), role FROM users WHERE id=$1`, in.UserID).Scan(&sid, &role); err != nil || sid != c.SekolahID {
+		jsonErr(w, 404, "Pengguna tidak ditemukan")
+		return
+	}
+	if role == "kepala_sekolah" {
+		jsonErr(w, 400, "Kepala sekolah tidak bisa jadi wali kelas")
+		return
+	}
+	db.Exec(`INSERT INTO wali_kelas (sekolah_id, kelas, user_id) VALUES ($1,$2,$3)
+		ON CONFLICT (sekolah_id, kelas) DO UPDATE SET user_id=EXCLUDED.user_id`, c.SekolahID, in.Kelas, in.UserID)
+	logActivity(c.UserID, "set_wali", "Wali kelas "+in.Kelas)
+	respond(w, 200, map[string]string{"ok": "1"})
+}
