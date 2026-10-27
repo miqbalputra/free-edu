@@ -205,3 +205,82 @@ func fnumFmt(v float64) string {
 	}
 	return out
 }
+
+// handleExportRekap: rekap bulanan dalam CSV (butuh plan export)
+func handleExportRekap(w http.ResponseWriter, r *http.Request, c *Claims) {
+	bulan := r.URL.Query().Get("bulan")
+	if len(bulan) != 7 || bulan[4] != '-' {
+		jsonErr(w, 400, "Format bulan harus YYYY-MM")
+		return
+	}
+	w.Header().Set("Content-Type", "text/csv; charset=utf-8")
+	w.Header().Set("Content-Disposition", "attachment; filename=rekap-"+bulan+".csv")
+	w.Write([]byte("\xEF\xBB\xBF")) // BOM agar Excel baca UTF-8
+	// Ringkasan
+	var lunas, belum, totalLunas, pemasukan, pengeluaran int
+	db.QueryRow(`SELECT COUNT(*) FILTER (WHERE sp.status='lunas'), COUNT(*) FILTER (WHERE sp.status!='lunas'),
+			COALESCE(SUM(sp.jumlah) FILTER (WHERE sp.status='lunas'),0)
+		FROM spp sp JOIN siswa s ON s.id=sp.siswa_id WHERE s.sekolah_id=$1 AND sp.bulan=$2`,
+		c.SekolahID, bulanNumName(bulan)).Scan(&lunas, &belum, &totalLunas)
+	db.QueryRow(`SELECT COALESCE(SUM(sp.jumlah),0) FROM spp sp JOIN siswa s ON s.id=sp.siswa_id
+		WHERE s.sekolah_id=$1 AND sp.status='lunas' AND to_char(sp.tgl_bayar,'YYYY-MM')=$2`, c.SekolahID, bulan).Scan(&pemasukan)
+	db.QueryRow(`SELECT COALESCE(SUM(jumlah),0) FROM pengeluaran WHERE sekolah_id=$1 AND to_char(tanggal,'YYYY-MM')=$2`, c.SekolahID, bulan).Scan(&pengeluaran)
+	w.Write([]byte("REKAP BULANAN " + bulan + " — " + bulanID[atoiSafe(bulan[5:])-1] + "\n\n"))
+	w.Write([]byte("Ringkasan,nilai\n"))
+	w.Write([]byte("SPP lunas," + itoa(lunas) + "\n"))
+	w.Write([]byte("SPP belum lunas," + itoa(belum) + "\n"))
+	w.Write([]byte("Total SPP diterima," + itoa(totalLunas) + "\n"))
+	w.Write([]byte("Pemasukan (dibayar bulan ini)," + itoa(pemasukan) + "\n"))
+	w.Write([]byte("Pengeluaran," + itoa(pengeluaran) + "\n"))
+	w.Write([]byte("Selisih kas," + itoa(pemasukan-pengeluaran) + "\n\n"))
+	// Absensi per kelas
+	w.Write([]byte("Absensi per kelas\nKelas,Hadir,Sakit,Izin,Alpa\n"))
+	rows, _ := db.Query(`SELECT s.kelas,
+			COUNT(*) FILTER (WHERE a.status='hadir'), COUNT(*) FILTER (WHERE a.status='sakit'),
+			COUNT(*) FILTER (WHERE a.status='izin'), COUNT(*) FILTER (WHERE a.status='alpa')
+		FROM absensi_siswa a JOIN siswa s ON s.id=a.siswa_id
+		WHERE s.sekolah_id=$1 AND to_char(a.tanggal,'YYYY-MM')=$2 GROUP BY s.kelas ORDER BY s.kelas`, c.SekolahID, bulan)
+	if rows != nil {
+		for rows.Next() {
+			var k string
+			var h, sk, iz, al int
+			rows.Scan(&k, &h, &sk, &iz, &al)
+			w.Write([]byte(k + "," + itoa(h) + "," + itoa(sk) + "," + itoa(iz) + "," + itoa(al) + "\n"))
+		}
+		rows.Close()
+	}
+	// Rata-rata nilai
+	w.Write([]byte("\nRata-rata nilai per kelas\nKelas,Rata-rata\n"))
+	rows, _ = db.Query(`SELECT s.kelas, ROUND(AVG(n.nilai)::numeric,1)::float8 FROM nilai n JOIN siswa s ON s.id=n.siswa_id
+		WHERE s.sekolah_id=$1 AND to_char(n.created_at,'YYYY-MM')=$2 GROUP BY s.kelas ORDER BY s.kelas`, c.SekolahID, bulan)
+	if rows != nil {
+		for rows.Next() {
+			var k string
+			var avg float64
+			rows.Scan(&k, &avg)
+			w.Write([]byte(k + "," + strconv.FormatFloat(avg, 'f', 1, 64) + "\n"))
+		}
+		rows.Close()
+	}
+	logActivity(c.UserID, "export_rekap", "Ekspor rekap "+bulan)
+}
+
+func atoiSafe(s string) int {
+	n, _ := strconv.Atoi(s)
+	if n < 1 || n > 12 {
+		return 1
+	}
+	return n
+}
+
+// planMWClaimsExport: adopsi Claims dari context lalu panggil handler Claims
+func planMWClaimsExport(h func(http.ResponseWriter, *http.Request, *Claims)) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		c := userFromContext(r)
+		if c == nil {
+			jsonErr(w, 401, "Unauthorized")
+			return
+		}
+		h(w, r, c)
+	}
+}

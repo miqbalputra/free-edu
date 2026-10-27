@@ -17,6 +17,15 @@
   --side:#1e1b4b; --side-2:#4f46e5; --side-fg:#c7d2fe;
   --radius:16px; --shadow:0 1px 3px rgba(30,27,75,.06),0 10px 30px rgba(30,27,75,.07);
 }
+/* DARK MODE */
+body.dark{
+  --bg:#0f1117; --card:#181b24; --fg:#e5e7f0; --muted:#8a90a0; --border:#2a2e3d;
+  --shadow:0 1px 3px rgba(0,0,0,.4),0 10px 30px rgba(0,0,0,.35);
+}
+body.dark .stat, body.dark .panel{background:var(--card)}
+body.dark input, body.dark select, body.dark textarea{background:#10131b;color:var(--fg);border-color:var(--border)}
+body.dark table th{background:#1d2130}
+body.dark .badge{filter:saturate(.85) brightness(.95)}
 /* TEMA PER ROLE */
 .role-kepala_sekolah{--side:#1e1b4b;--side-2:#7c3aed;--primary:#6d28d9;--primary-2:#8b5cf6}
 .role-guru{--side:#0c4a6e;--side-2:#0284c7;--primary:#0369a1;--primary-2:#0ea5e9}
@@ -238,6 +247,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
       <div class="userbox">
         <div class="avatar">{{ initials }}</div>
         <div class="info"><b>{{ user.nama }}</b><small>{{ roleLabel }}</small></div>
+        <button class="out" @click="toggleDark" :title="dark ? 'Mode terang' : 'Mode gelap'">{{ dark ? '☀️' : '🌙' }}</button>
         <button class="out" @click="logout" title="Keluar">⎋</button>
       </div>
     </aside>
@@ -487,6 +497,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
         <div class="toolbar">
           <input type="month" v-model="rekapBulan" style="max-width:200px">
           <button class="btn" @click="loadRekap">Tampilkan</button>
+          <a class="btn sec" :href="API+'/export/rekap?bulan='+rekapBulan+'&token='+token" target="_blank">⬇️ Unduh Excel <span v-if="langganan.plan==='gratis'" style="font-size:10px">🔒</span></a>
         </div>
         <div v-if="rekap">
           <div class="stats" style="margin:14px 0">
@@ -951,6 +962,10 @@ createApp({
     const planLabel = computed(() => ({gratis:'🆓 Gratis', sekolah:'🏫 Sekolah', yayasan:'🕌 Yayasan'}[langganan.value.plan] || 'Gratis'));
     const waUpgrade = 'https://wa.me/6281234567890?text=' + encodeURIComponent('Halo, saya mau upgrade SIMAKA. Sekolah: ' + (user.value ? user.value.nama : '') );
     const adminSekolah = ref([]), adminStats = ref({}), adminPlan = ref({}), adminBulan = ref({});
+    const dark = ref(localStorage.getItem('simaka_dark') === '1');
+    function applyDark(){ document.body.classList.toggle('dark', dark.value); }
+    applyDark();
+    function toggleDark(){ dark.value = !dark.value; localStorage.setItem('simaka_dark', dark.value?'1':'0'); applyDark(); }
     async function loadAdmin(){
       try {
         adminStats.value = await api('/api/admin/stats');
@@ -1196,10 +1211,10 @@ createApp({
       pengUraian, pengKategori, pengJumlah, modalSiswa, modalNilai, modalHafalan, modalSPP, modalAgenda, modalPengumuman, modalJadwal, modalUser,
       formSiswa, formNilai, formHafalan, formSPP, formAgenda, formPengumuman, formJadwal, formUser, rapor, raporSiswa, raporTA, modalBulk, bulk,
       set, logs, pw, raporCatatan, siswaData, siswaPage, siswaPages, rekap, rekapBulan, waliList, waliKelas, waliUser, waliCandidates,
-      adminSekolah, adminStats, adminPlan, adminBulan,
+      adminSekolah, adminStats, adminPlan, adminBulan, dark,
       mode, daftar, langganan, modalWA, waList,
  bulanList, mapelList, surahList, kelasList, filteredSiswa, roleLabel, greeting, greetSub, initials, pageTitle, todayID, planLabel, waUpgrade,
- showToast, rp, fmtDate, roleLabelOf, fnum, openRapor, cetakRapor, exportCSV, openBulk, loadBulkSiswa, saveBulk, debouncedSiswa, saveCatatan, loadAdmin, applyPlan,
+ showToast, rp, fmtDate, roleLabelOf, fnum, openRapor, cetakRapor, exportCSV, openBulk, loadBulkSiswa, saveBulk, debouncedSiswa, saveCatatan, loadAdmin, applyPlan, toggleDark,
  doLogin, doDaftar, loadNotifWA, logout, load, openSiswa, saveSiswa, delSiswa, saveAbsensi, absenGuru, delData, loadRekap, loadWali, saveWali,
       openNilai, saveNilai, saveHafalan, generateSPP, bayarSPP, addPengeluaran, saveAgenda, savePengumuman, delPengumuman, saveJadwal, saveUser, saveSet, savePw, resetPw };
   }

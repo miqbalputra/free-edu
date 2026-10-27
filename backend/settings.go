@@ -340,3 +340,84 @@ func handleSetWali(w http.ResponseWriter, r *http.Request, c *Claims) {
 func rotateLog() {
 	db.Exec(`DELETE FROM activity_log WHERE id < (SELECT COALESCE(MAX(id),0) - 5000 FROM activity_log)`)
 }
+
+// ---------- EDIT (PUT) — jadwal, agenda, pengumuman (Fase polish) ----------
+
+func handleUpdateJadwal(w http.ResponseWriter, r *http.Request, c *Claims) {
+	id, _ := strconv.Atoi(r.PathValue("id"))
+	var in struct {
+		Kelas, Hari, JamMulai, JamSelesai, Mapel string
+		GuruID                                   int
+	}
+	json.NewDecoder(r.Body).Decode(&in)
+	if in.Kelas == "" || in.Hari == "" || in.Mapel == "" {
+		jsonErr(w, 400, "Kelas, hari, dan mapel wajib")
+		return
+	}
+	if in.JamMulai == "" {
+		in.JamMulai = "07:00"
+	}
+	if in.JamSelesai == "" {
+		in.JamSelesai = "08:00"
+	}
+	res, err := db.Exec(`UPDATE jadwal SET kelas=$1, hari=$2, jam_mulai=$3::TIME, jam_selesai=$4::TIME, mapel=$5, guru_id=NULLIF($6,0)
+		WHERE id=$7 AND sekolah_id=$8`, in.Kelas, in.Hari, in.JamMulai, in.JamSelesai, in.Mapel, in.GuruID, id, c.SekolahID)
+	if err != nil {
+		jsonErr(w, 500, err.Error())
+		return
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		jsonErr(w, 404, "Jadwal tidak ditemukan")
+		return
+	}
+	respond(w, 200, map[string]string{"ok": "1"})
+}
+
+func handleUpdateAgenda(w http.ResponseWriter, r *http.Request, c *Claims) {
+	id, _ := strconv.Atoi(r.PathValue("id"))
+	var in struct {
+		Judul, Deskripsi, Tanggal, Waktu, Lokasi string
+	}
+	json.NewDecoder(r.Body).Decode(&in)
+	if in.Judul == "" || in.Tanggal == "" {
+		jsonErr(w, 400, "Judul dan tanggal wajib")
+		return
+	}
+	res, err := db.Exec(`UPDATE agenda SET judul=$1, deskripsi=NULLIF($2,''), tanggal=$3, waktu=NULLIF($4,'')::TIME, lokasi=NULLIF($5,'')
+		WHERE id=$6 AND sekolah_id=$7`, in.Judul, in.Deskripsi, in.Tanggal, in.Waktu, in.Lokasi, id, c.SekolahID)
+	if err != nil {
+		jsonErr(w, 500, err.Error())
+		return
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		jsonErr(w, 404, "Agenda tidak ditemukan")
+		return
+	}
+	respond(w, 200, map[string]string{"ok": "1"})
+}
+
+func handleUpdatePengumuman(w http.ResponseWriter, r *http.Request, c *Claims) {
+	id, _ := strconv.Atoi(r.PathValue("id"))
+	var in struct {
+		Judul, Isi, Target string
+	}
+	json.NewDecoder(r.Body).Decode(&in)
+	if in.Judul == "" || in.Isi == "" {
+		jsonErr(w, 400, "Judul dan isi wajib")
+		return
+	}
+	if in.Target == "" {
+		in.Target = "semua"
+	}
+	res, err := db.Exec(`UPDATE pengumuman SET judul=$1, isi=$2, target=$3 WHERE id=$4 AND sekolah_id=$5`,
+		in.Judul, in.Isi, in.Target, id, c.SekolahID)
+	if err != nil {
+		jsonErr(w, 500, err.Error())
+		return
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		jsonErr(w, 404, "Pengumuman tidak ditemukan")
+		return
+	}
+	respond(w, 200, map[string]string{"ok": "1"})
+}

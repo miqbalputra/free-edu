@@ -21,6 +21,7 @@ func registerRoutes(mux *http.ServeMux) {
 	api.Handle("POST /api/pengumuman", authMiddleware(roleMW(handleCreatePengumuman, "kepala_sekolah", "tu", "guru")))
 	api.Handle("GET /api/pengumuman", authMiddleware(http.HandlerFunc(handleListPengumuman)))
 	api.Handle("DELETE /api/pengumuman/{id}", authMiddleware(roleMW(handleDeletePengumuman, "kepala_sekolah", "tu")))
+	api.Handle("PUT /api/pengumuman/{id}", authMiddleware(roleMW(handleUpdatePengumuman, "kepala_sekolah", "tu")))
 
 	// Siswa
 	api.Handle("GET /api/siswa", authMiddleware(http.HandlerFunc(handleListSiswa)))
@@ -62,9 +63,11 @@ func registerRoutes(mux *http.ServeMux) {
 	api.Handle("GET /api/agenda", authMiddleware(http.HandlerFunc(handleListAgenda)))
 	api.Handle("POST /api/agenda", authMiddleware(roleMW(handleCreateAgenda, "kepala_sekolah", "tu", "guru")))
 	api.Handle("DELETE /api/agenda/{id}", authMiddleware(roleMW(handleDeleteAgenda, "kepala_sekolah", "tu")))
+	api.Handle("PUT /api/agenda/{id}", authMiddleware(roleMW(handleUpdateAgenda, "kepala_sekolah", "tu", "guru")))
 	api.Handle("GET /api/jadwal", authMiddleware(http.HandlerFunc(handleListJadwal)))
 	api.Handle("POST /api/jadwal", authMiddleware(roleMW(handleCreateJadwal, "tu", "kepala_sekolah")))
 	api.Handle("DELETE /api/jadwal/{id}", authMiddleware(roleMW(handleDeleteJadwal, "tu", "kepala_sekolah")))
+	api.Handle("PUT /api/jadwal/{id}", authMiddleware(roleMW(handleUpdateJadwal, "tu", "kepala_sekolah")))
 
 	// Dashboard
 	api.Handle("GET /api/dashboard", authMiddleware(http.HandlerFunc(handleDashboard)))
@@ -74,6 +77,7 @@ func registerRoutes(mux *http.ServeMux) {
 	api.Handle("GET /api/export/spp", authMiddleware(planMW("export", handleExportSPP)))
 	api.Handle("GET /api/export/nilai", authMiddleware(planMW("export", handleExportNilai)))
 	api.Handle("GET /api/export/keuangan", authMiddleware(planMW("export", handleExportKeuangan)))
+	api.Handle("GET /api/export/rekap", authMiddleware(roleMWAuth(planMW("export", planMWClaimsExport(handleExportRekap)), "kepala_sekolah", "tu")))
 	api.Handle("GET /api/rapor/{id}", authMiddleware(http.HandlerFunc(handleRaporData)))
 	api.Handle("GET /api/rapor-cetak/{id}", http.HandlerFunc(handleCetakRapor))
 	api.Handle("GET /api/kwitansi/{id}", http.HandlerFunc(handleKwitansi))
