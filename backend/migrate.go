@@ -139,7 +139,8 @@ func migrate() error {
 			tahun_ajaran_aktif TEXT DEFAULT '2026/2027',
 			semester_aktif TEXT DEFAULT 'ganjil'
 		)`,
-		`INSERT INTO pengaturan (id) VALUES (1) ON CONFLICT DO NOTHING`,
+		`INSERT INTO pengaturan (id, nama_sekolah) VALUES (1, 'Sekolah Saya') ON CONFLICT DO NOTHING`,
+		// pengaturan per sekolah (id = sekolah.id) dibuat otomatis di handleDaftar
 		`DROP TABLE IF EXISTS login_fails`,
 		`CREATE TABLE IF NOT EXISTS login_fails (
 			key TEXT PRIMARY KEY,

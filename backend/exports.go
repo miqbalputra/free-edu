@@ -127,7 +127,7 @@ func handleRaporData(w http.ResponseWriter, r *http.Request) {
 	}
 	ta := r.URL.Query().Get("tahun_ajaran")
 	if ta == "" {
-		ta = tahunAjaranAktif()
+		ta = tahunAjaranSekolah(c.SekolahID)
 	}
 	var nama, nis, kelas, ortu, hp string
 	err := db.QueryRow(`SELECT nama, COALESCE(nis,''), kelas, COALESCE(nama_ortu,''), COALESCE(hp_ortu,'') FROM siswa WHERE id=$1`, sid).
@@ -248,12 +248,12 @@ func handleCetakRapor(w http.ResponseWriter, r *http.Request) {
 	}
 	ta := r.URL.Query().Get("tahun_ajaran")
 	if ta == "" {
-		ta = tahunAjaranAktif()
+		ta = tahunAjaranSekolah(c.SekolahID)
 	}
 	var nama, nis, kelas, ortu string
 	db.QueryRow(`SELECT nama, COALESCE(nis,''), kelas, COALESCE(nama_ortu,'') FROM siswa WHERE id=$1`, sid).Scan(&nama, &nis, &kelas, &ortu)
 	var namaSekolah, alamatSekolah, kepalaSekolah string
-	db.QueryRow(`SELECT nama_sekolah, COALESCE(alamat,''), COALESCE(kepala_sekolah,'') FROM pengaturan WHERE id=1`).Scan(&namaSekolah, &alamatSekolah, &kepalaSekolah)
+	db.QueryRow(`SELECT nama_sekolah, COALESCE(alamat,''), COALESCE(kepala_sekolah,'') FROM pengaturan WHERE id=$1`, c.SekolahID).Scan(&namaSekolah, &alamatSekolah, &kepalaSekolah)
 	cw, ek, pr := getCatatan(sid, ta)
 	rows, err := db.Query(`SELECT mapel, jenis, AVG(nilai) FROM nilai WHERE siswa_id=$1 AND tahun_ajaran=$2 GROUP BY mapel, jenis`, sid, ta)
 	if err != nil {
@@ -400,7 +400,7 @@ func handleBulkNilai(w http.ResponseWriter, r *http.Request, c *Claims) {
 		return
 	}
 	if in.TahunAjaran == "" {
-		in.TahunAjaran = tahunAjaranAktif()
+		in.TahunAjaran = tahunAjaranSekolah(c.SekolahID)
 	}
 	n, skip := 0, 0
 	for _, it := range in.Items {

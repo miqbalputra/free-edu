@@ -13,8 +13,13 @@ import (
 // ---------- PENGATURAN SEKOLAH ----------
 
 func handleGetPengaturan(w http.ResponseWriter, r *http.Request) {
+	c := userFromContext(r)
+	if c == nil {
+		jsonErr(w, 401, "Unauthorized")
+		return
+	}
 	var nama, alamat, npsn, kepala, ta, sem string
-	err := db.QueryRow(`SELECT nama_sekolah, COALESCE(alamat,''), COALESCE(npsn,''), COALESCE(kepala_sekolah,''), tahun_ajaran_aktif, semester_aktif FROM pengaturan WHERE id=1`).
+	err := db.QueryRow(`SELECT nama_sekolah, COALESCE(alamat,''), COALESCE(npsn,''), COALESCE(kepala_sekolah,''), tahun_ajaran_aktif, semester_aktif FROM pengaturan WHERE id=$1`, c.SekolahID).
 		Scan(&nama, &alamat, &npsn, &kepala, &ta, &sem)
 	if err != nil {
 		jsonErr(w, 500, userErr(err))
@@ -29,8 +34,8 @@ func handleGetPengaturan(w http.ResponseWriter, r *http.Request) {
 func handleUpdatePengaturan(w http.ResponseWriter, r *http.Request, c *Claims) {
 	var in map[string]string
 	json.NewDecoder(r.Body).Decode(&in)
-	_, err := db.Exec(`UPDATE pengaturan SET nama_sekolah=$1, alamat=$2, npsn=$3, kepala_sekolah=$4, tahun_ajaran_aktif=$5, semester_aktif=$6 WHERE id=1`,
-		in["nama_sekolah"], in["alamat"], in["npsn"], in["kepala_sekolah"], in["tahun_ajaran_aktif"], in["semester_aktif"])
+	_, err := db.Exec(`UPDATE pengaturan SET nama_sekolah=$1, alamat=$2, npsn=$3, kepala_sekolah=$4, tahun_ajaran_aktif=$5, semester_aktif=$6 WHERE id=$7`,
+		in["nama_sekolah"], in["alamat"], in["npsn"], in["kepala_sekolah"], in["tahun_ajaran_aktif"], in["semester_aktif"], c.SekolahID)
 	if err != nil {
 		jsonErr(w, 500, userErr(err))
 		return
@@ -139,7 +144,7 @@ func handleGetCatatanRapor(w http.ResponseWriter, r *http.Request) {
 	}
 	ta := r.URL.Query().Get("tahun_ajaran")
 	if ta == "" {
-		ta = tahunAjaranAktif()
+		ta = tahunAjaranSekolah(c.SekolahID)
 	}
 	cw, ek, pr := getCatatan(sid, ta)
 	respond(w, 200, map[string]string{"catatan_wali": cw, "ekstrakurikuler": ek, "prestasi": pr})
@@ -158,7 +163,7 @@ func handleSaveCatatanRapor(w http.ResponseWriter, r *http.Request, c *Claims) {
 	}
 	json.NewDecoder(r.Body).Decode(&in)
 	if in.TahunAjaran == "" {
-		in.TahunAjaran = tahunAjaranAktif()
+		in.TahunAjaran = tahunAjaranSekolah(c.SekolahID)
 	}
 	_, err := db.Exec(`INSERT INTO rapor_catatan (siswa_id, tahun_ajaran, catatan_wali, ekstrakurikuler, prestasi, wali_id)
 		VALUES ($1,$2,$3,$4,$5,$6)

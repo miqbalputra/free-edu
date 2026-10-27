@@ -179,6 +179,8 @@ func handleDaftar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	db.Exec(`INSERT INTO langganan (sekolah_id, paket, status, catatan) VALUES ($1,'gratis','aktif','Trial 14 hari')`, sid)
+	// pengaturan per sekolah (kop kwitansi, tahun ajaran, dsb.)
+	db.Exec(`INSERT INTO pengaturan (id, nama_sekolah, tahun_ajaran_aktif) VALUES ($1,$2,'2026/2027') ON CONFLICT DO NOTHING`, sid, in.NamaSekolah)
 	hash, _ := bcrypt.GenerateFromPassword([]byte(in.Password), bcrypt.DefaultCost)
 	var uid int
 	db.QueryRow(`INSERT INTO users (nama,email,password,role,sekolah_id) VALUES ($1,$2,$3,'kepala_sekolah',$4) RETURNING id`,

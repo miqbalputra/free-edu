@@ -358,7 +358,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           <tr v-for="s in siswaData">
             <td>{{ s.nis }}</td><td><b>{{ s.nama }}</b></td><td>{{ s.jk }}</td><td>{{ s.kelas }}</td>
             <td>{{ s.nama_ortu }}</td><td>{{ s.hp_ortu }}</td><td><span class="badge" :class="s.status==='aktif'?'b-hadir':'b-baru'">{{ s.status }}</span></td>
-            <td><button class="btn sec sm" @click="openSiswa(s)">Edit</button> <button class="btn warn sm" @click="delSiswa(s)">Hapus</button></td>
+            <td><button class="btn sec sm" @click="openSiswa(s)">Edit</button> <button class="btn warn sm" @click="delSiswa(s)">Arsipkan</button></td>
           </tr>
         </table>
         <div v-else class="empty">Belum ada siswa</div>
@@ -1105,7 +1105,7 @@ createApp({
         modalSiswa.value=false; showToast('Data siswa tersimpan ✅'); load('siswa');
       } catch(e){ showToast(e.message, true); }
     }
-    async function delSiswa(s){ if(!confirm('Hapus '+s.nama+'?')) return; await api('/api/siswa/'+s.id,{method:'DELETE'}); showToast('Siswa dihapus'); load('siswa'); }
+    async function delSiswa(s){ if(!confirm('Arsipkan '+s.nama+'?\n\nSiswa akan keluar dari daftar aktif, tapi semua nilai, tagihan, dan hafalannya TETAP TERSIMPAN dan bisa dilihat kapan saja.')) return; await api('/api/siswa/'+s.id,{method:'DELETE'}); showToast('Siswa diarsipkan — datanya tetap aman ✅'); load('siswa'); }
 
     // absensi siswa
     async function saveAbsensi(){

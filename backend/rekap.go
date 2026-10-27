@@ -1,9 +1,12 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strconv"
+
+	"github.com/golang-jwt/jwt/v5"
 )
 
 // ---------- LAPORAN REKAP BULANAN (Fase C) ----------
@@ -125,6 +128,20 @@ func bulanNumName(bulan string) string {
 // Halaman HTML siap cetak (print-friendly, thermal & A5), token di URL seperti rapor-cetak.
 
 func handleKwitansi(w http.ResponseWriter, r *http.Request) {
+	c := userFromContext(r)
+	if c == nil {
+		tokStr := r.URL.Query().Get("token")
+		if tokStr != "" {
+			if tok, err := jwt.ParseWithClaims(tokStr, &Claims{}, func(t *jwt.Token) (interface{}, error) { return jwtSecret, nil }); err == nil && tok.Valid {
+				r = r.WithContext(context.WithValue(r.Context(), userKey, tok.Claims.(*Claims)))
+			}
+		}
+	}
+	c2 := userFromContext(r)
+	if c2 == nil {
+		http.Error(w, "Unauthorized", 401)
+		return
+	}
 	id, _ := strconv.Atoi(r.PathValue("id"))
 	var nama, kelas, bulan, tahun, tglBayar, metode, petugas, namaSekolah, alamat, kepala string
 	var jumlah float64
@@ -134,22 +151,12 @@ func handleKwitansi(w http.ResponseWriter, r *http.Request) {
 		FROM spp sp
 		JOIN siswa s ON s.id=sp.siswa_id
 		LEFT JOIN users u ON u.id=sp.petugas_id
-		JOIN pengaturan sk ON sk.id=1
-		WHERE sp.id=$1 AND sp.status='lunas' AND sp.sekolah_id=s.sekolah_id`, id).
+		JOIN pengaturan sk ON sk.id=$2
+		WHERE sp.id=$1 AND sp.status='lunas' AND s.sekolah_id=$2`, id, c2.SekolahID).
 		Scan(&nama, &kelas, &bulan, &tahun, &tglBayar, &metode, &petugas, &namaSekolah, &alamat, &kepala, &sid, &jumlah)
 	if err != nil {
-		// fallback tenant via siswa (sp.sekolah_id mungkin belum terisi utk data lama)
-		err = db.QueryRow(`SELECT s.nama, s.kelas, sp.bulan, sp.tahun, COALESCE(to_char(sp.tgl_bayar,'DD Mon YYYY'),'-'),
-				COALESCE(sp.metode,'tunai'), COALESCE(u.nama,'-'), sk.nama_sekolah, COALESCE(sk.alamat,''), COALESCE(sk.kepala_sekolah,''), s.sekolah_id, sp.jumlah
-			FROM spp sp JOIN siswa s ON s.id=sp.siswa_id
-			LEFT JOIN users u ON u.id=sp.petugas_id
-			JOIN pengaturan sk ON sk.id=1
-			WHERE sp.id=$1 AND sp.status='lunas'`, id).
-			Scan(&nama, &kelas, &bulan, &tahun, &tglBayar, &metode, &petugas, &namaSekolah, &alamat, &kepala, &sid, &jumlah)
-		if err != nil {
-			http.Error(w, "Kwitansi tidak ditemukan (SPP belum lunas?)", 404)
-			return
-		}
+		http.Error(w, "Kwitansi tidak ditemukan (SPP belum lunas?)", 404)
+		return
 	}
 	fmt.Fprintf(w, `<!doctype html><html lang="id"><head><meta charset="utf-8"><title>Kwitansi SPP %s</title>
 <style>

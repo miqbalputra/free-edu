@@ -338,27 +338,19 @@ func handleDeleteSiswa(w http.ResponseWriter, r *http.Request, c *Claims) {
 		jsonErr(w, 404, "Siswa tidak ditemukan")
 		return
 	}
-	tx, err := db.Begin()
+	// ARSIP, bukan hapus: data nilai/SPP/hafalan tetap aman.
+	// Siswa berstatus 'keluar' tidak tampil di daftar aktif & tidak ikut generate SPP.
+	res, err := db.Exec(`UPDATE siswa SET status='keluar' WHERE id=$1 AND sekolah_id=$2`, id, c.SekolahID)
 	if err != nil {
 		jsonErr(w, 500, userErr(err))
 		return
 	}
-	defer tx.Rollback()
-	for _, t := range []string{"absensi_siswa", "nilai", "hafalan", "spp"} {
-		if _, err := tx.Exec(`DELETE FROM `+t+` WHERE siswa_id=$1`, id); err != nil {
-			jsonErr(w, 500, userErr(err))
-			return
-		}
-	}
-	if _, err := tx.Exec(`DELETE FROM siswa WHERE id=$1`, id); err != nil {
-		jsonErr(w, 500, userErr(err))
+	if n, _ := res.RowsAffected(); n == 0 {
+		jsonErr(w, 404, "Siswa tidak ditemukan")
 		return
 	}
-	if err := tx.Commit(); err != nil {
-		jsonErr(w, 500, userErr(err))
-		return
-	}
-	respond(w, 200, map[string]string{"ok": "1"})
+	logActivity(c.UserID, "arsip_siswa", "Mengarsipkan siswa ID "+itoa(id)+" (data tetap tersimpan)")
+	respond(w, 200, map[string]string{"ok": "1", "pesan": "Siswa diarsipkan. Semua nilai, tagihan, dan hafalannya tetap tersimpan."})
 }
 
 // ---------- ABSENSI SISWA ----------
@@ -510,9 +502,9 @@ func handleListNilai(w http.ResponseWriter, r *http.Request) {
 }
 
 // tahunAjaranAktif membaca pengaturan sekolah; fallback 2026/2027
-func tahunAjaranAktif() string {
+func tahunAjaranSekolah(sekolahID int) string {
 	var ta string
-	db.QueryRow(`SELECT COALESCE(tahun_ajaran_aktif,'') FROM pengaturan WHERE id=1`).Scan(&ta)
+	db.QueryRow(`SELECT COALESCE(tahun_ajaran_aktif,'') FROM pengaturan WHERE id=$1`, sekolahID).Scan(&ta)
 	if ta == "" {
 		ta = "2026/2027"
 	}
@@ -541,7 +533,7 @@ func handleUpsertNilai(w http.ResponseWriter, r *http.Request, c *Claims) {
 		return
 	}
 	if in.TahunAjaran == "" {
-		in.TahunAjaran = tahunAjaranAktif()
+		in.TahunAjaran = tahunAjaranSekolah(c.SekolahID)
 	}
 	_, err := db.Exec(`INSERT INTO nilai (siswa_id,mapel,kelas,jenis,semester,tahun_ajaran,nilai,guru_id) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
 		ON CONFLICT (siswa_id,mapel,jenis,semester,tahun_ajaran) DO UPDATE SET nilai=EXCLUDED.nilai, guru_id=EXCLUDED.guru_id`,
