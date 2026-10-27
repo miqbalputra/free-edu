@@ -232,6 +232,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
         <button v-if="user.role==='kepala_sekolah'" :class="{active:page==='log'}" @click="page='log'">🕵️ Log Aktivitas</button>
         <button v-if="user.role!=='guru'" :class="{active:page==='pengaturan'}" @click="page='pengaturan'">🏫 Profil Sekolah</button>
         <button :class="{active:page==='akun'}" @click="page='akun'">🔑 Akun Saya</button>
+        <button v-if="user.role==='platform'" :class="{active:page==='admin'}" @click="page='admin'">🛡️ Panel Admin</button>
         <button :class="{active:page==='upgrade'}" @click="page='upgrade'">💎 Paket &amp; Upgrade</button>
       </nav>
       <div class="userbox">
@@ -634,6 +635,38 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
         </p>
       </div>
 
+      <!-- PANEL ADMIN PLATFORM -->
+      <div v-if="page==='admin'">
+        <div class="stats" style="margin-bottom:20px">
+          <div class="stat"><small>Sekolah Terdaftar</small><b>{{ adminStats.sekolah }}</b><small style="color:var(--accent)">{{ adminStats.trial }} trial</small></div>
+          <div class="stat alt"><small>Total Siswa</small><b>{{ adminStats.siswa }}</b></div>
+          <div class="stat"><small>Total Pengguna</small><b>{{ adminStats.pengguna }}</b></div>
+          <div class="stat warn"><small>MRR (per bulan)</small><b>{{ rp(adminStats.mrr) }}</b></div>
+        </div>
+        <div class="panel">
+          <h3>🛡️ Kelola Sekolah &amp; Langganan</h3>
+          <table v-if="adminSekolah.length">
+            <tr><th>ID</th><th>Sekolah</th><th>Status</th><th>Plan</th><th>Siswa</th><th>User</th><th>SPP Lunas</th><th>Ubah Plan</th></tr>
+            <tr v-for="s in adminSekolah">
+              <td>{{ s.id }}</td>
+              <td><b>{{ s.nama }}</b><br><small style="color:var(--muted)">{{ s.subdomain }}</small></td>
+              <td><span class="badge" :class="s.status==='trial'?'b-proses':'b-lunas'">{{ s.status }}</span></td>
+              <td><b>{{ s.plan }}</b><br><small v-if="s.langganan_status==='aktif' && s.trial_sampai" style="color:var(--muted)">{{ s.plan!=='gratis' ? 'aktif' : '' }}</small></td>
+              <td>{{ s.siswa }}</td>
+              <td>{{ s.pengguna }}</td>
+              <td>{{ rp(s.spp_lunas) }}</td>
+              <td style="white-space:nowrap">
+                <select v-model="adminPlan[s.id]" style="max-width:110px;display:inline-block">
+                  <option value="gratis">Gratis</option><option value="sekolah">Sekolah</option><option value="yayasan">Yayasan</option>
+                </select>
+                <input type="number" v-model.number="adminBulan[s.id]" min="1" max="24" style="width:64px;display:inline-block" title="Durasi bulan">
+                <button class="btn sm" @click="applyPlan(s)">Aktifkan</button>
+              </td>
+            </tr>
+          </table>
+        </div>
+      </div>
+
       <!-- LOG AKTIVITAS -->
       <div v-if="page==='log'" class="panel">
         <h3>🕵️ Log Aktivitas Terakhir</h3>
@@ -917,6 +950,23 @@ createApp({
     const pages = {dashboard:'Dashboard', siswa:'Data Siswa', absensi:'Absensi Siswa', nilai:'Nilai', rapor:'Rapor Siswa', hafalan:'Setoran Hafalan', jadwal:'Jadwal Pelajaran', 'absensi-guru':'Absensi Guru & Pegawai', spp:'SPP — Pembayaran Siswa', keuangan:'Keuangan Sekolah', agenda:'Agenda Kegiatan', pengumuman:'Pengumuman', users:'Manajemen Pengguna', log:'Log Aktivitas', pengaturan:'Profil Sekolah', akun:'Akun Saya', upgrade:'Paket & Upgrade'};
     const planLabel = computed(() => ({gratis:'🆓 Gratis', sekolah:'🏫 Sekolah', yayasan:'🕌 Yayasan'}[langganan.value.plan] || 'Gratis'));
     const waUpgrade = 'https://wa.me/6281234567890?text=' + encodeURIComponent('Halo, saya mau upgrade SIMAKA. Sekolah: ' + (user.value ? user.value.nama : '') );
+    const adminSekolah = ref([]), adminStats = ref({}), adminPlan = ref({}), adminBulan = ref({});
+    async function loadAdmin(){
+      try {
+        adminStats.value = await api('/api/admin/stats');
+        adminSekolah.value = await api('/api/admin/sekolah');
+        const p = {}, b = {};
+        adminSekolah.value.forEach(s => { p[s.id] = s.plan; b[s.id] = s.plan==='yayasan'?12:1; });
+        adminPlan.value = p; adminBulan.value = b;
+      } catch(e){ showToast(e.message,true); }
+    }
+    async function applyPlan(s){
+      if(!confirm('Aktifkan paket '+adminPlan.value[s.id]+' ('+adminBulan.value[s.id]+' bulan) untuk '+s.nama+'?')) return;
+      try {
+        const r = await api('/api/admin/set-plan',{method:'POST',body:JSON.stringify({sekolah_id:s.id,paket:adminPlan.value[s.id],bulan:adminBulan.value[s.id]})});
+        showToast('Paket diaktifkan s/d '+r.sampai+' ✅'); loadAdmin();
+      } catch(e){ showToast(e.message,true); }
+    }
     const pageTitle = computed(() => pages[page.value] || '');
     const todayID = new Date().toLocaleDateString('id-ID', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
 
@@ -1138,7 +1188,7 @@ createApp({
         showToast('Wali kelas disimpan ✅'); loadWali(); }
       catch(e){ showToast(e.message,true); }
     }
-    watch(page, (p)=>{ if(p==='rekap') loadRekap(); if(p==='wali') loadWali(); });
+    watch(page, (p)=>{ if(p==='rekap') loadRekap(); if(p==='wali') loadWali(); if(p==='admin') loadAdmin(); });
 
     onMounted(() => { if (token.value) { load('dashboard'); api('/api/pengaturan').then(p=>{ set.value=p; raporTA.value=p.tahun_ajaran_aktif||'2026/2027'; }).catch(()=>{}); } });
     return { API, token, user, page, loading, toast, toastErr, login, dash, siswa, nilai, hafalan, jadwal, spp, pengeluaran, agenda, pengumuman, users,
@@ -1146,9 +1196,10 @@ createApp({
       pengUraian, pengKategori, pengJumlah, modalSiswa, modalNilai, modalHafalan, modalSPP, modalAgenda, modalPengumuman, modalJadwal, modalUser,
       formSiswa, formNilai, formHafalan, formSPP, formAgenda, formPengumuman, formJadwal, formUser, rapor, raporSiswa, raporTA, modalBulk, bulk,
       set, logs, pw, raporCatatan, siswaData, siswaPage, siswaPages, rekap, rekapBulan, waliList, waliKelas, waliUser, waliCandidates,
+      adminSekolah, adminStats, adminPlan, adminBulan,
       mode, daftar, langganan, modalWA, waList,
  bulanList, mapelList, surahList, kelasList, filteredSiswa, roleLabel, greeting, greetSub, initials, pageTitle, todayID, planLabel, waUpgrade,
- showToast, rp, fmtDate, roleLabelOf, fnum, openRapor, cetakRapor, exportCSV, openBulk, loadBulkSiswa, saveBulk, debouncedSiswa, saveCatatan,
+ showToast, rp, fmtDate, roleLabelOf, fnum, openRapor, cetakRapor, exportCSV, openBulk, loadBulkSiswa, saveBulk, debouncedSiswa, saveCatatan, loadAdmin, applyPlan,
  doLogin, doDaftar, loadNotifWA, logout, load, openSiswa, saveSiswa, delSiswa, saveAbsensi, absenGuru, delData, loadRekap, loadWali, saveWali,
       openNilai, saveNilai, saveHafalan, generateSPP, bayarSPP, addPengeluaran, saveAgenda, savePengumuman, delPengumuman, saveJadwal, saveUser, saveSet, savePw, resetPw };
   }

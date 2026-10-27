@@ -9,7 +9,7 @@ func migrate() error {
 			nama TEXT NOT NULL,
 			email TEXT UNIQUE NOT NULL,
 			password TEXT NOT NULL,
-			role TEXT NOT NULL CHECK (role IN ('kepala_sekolah','guru','tu')),
+			role TEXT NOT NULL CHECK (role IN ('kepala_sekolah','guru','tu','platform')),
 			nip TEXT,
 			created_at TIMESTAMPTZ DEFAULT now()
 		)`,

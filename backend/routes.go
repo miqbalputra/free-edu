@@ -109,6 +109,11 @@ func registerRoutes(mux *http.ServeMux) {
 	api.Handle("POST /api/users", authMiddleware(roleMW(handleCreateUser, "kepala_sekolah")))
 	api.Handle("DELETE /api/users/{id}", authMiddleware(roleMW(handleDeleteUser, "kepala_sekolah")))
 
+	// Panel admin platform (role khusus owner)
+	api.Handle("GET /api/admin/sekolah", authMiddleware(roleMW(handleAdminSekolah, "platform")))
+	api.Handle("POST /api/admin/set-plan", authMiddleware(roleMW(handleAdminSetPlan, "platform")))
+	api.Handle("GET /api/admin/stats", authMiddleware(roleMW(handleAdminStats, "platform")))
+
 	mux.Handle("/api/", api)
 }
 
@@ -189,9 +194,12 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Cek langganan sekolah
-	if ok, msg := cekLangganan(u.SekolahID); !ok {
-		jsonErr(w, 402, msg)
-		return
+	// Users dengan role 'platform' tidak terikat sekolah — cekLangganan dilewati
+	if u.Role != "platform" {
+		if ok, msg := cekLangganan(u.SekolahID); !ok {
+			jsonErr(w, 402, msg)
+			return
+		}
 	}
 	loginRecordSuccess(key)
 	tok, _ := makeToken(&u)
