@@ -315,3 +315,8 @@ func handleSetWali(w http.ResponseWriter, r *http.Request, c *Claims) {
 	logActivity(c.UserID, "set_wali", "Wali kelas "+in.Kelas)
 	respond(w, 200, map[string]string{"ok": "1"})
 }
+
+// rotateLog: panggil periodik — simpan maks. 5000 entri activity_log
+func rotateLog() {
+	db.Exec(`DELETE FROM activity_log WHERE id < (SELECT COALESCE(MAX(id),0) - 5000 FROM activity_log)`)
+}

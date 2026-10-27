@@ -224,10 +224,21 @@ func handleCetakRapor(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
+	c := userFromContext(r)
+	if c == nil {
+		http.Error(w, "Unauthorized", 401)
+		return
+	}
 	sid, _ := strconv.Atoi(r.PathValue("id"))
+	// cek tenant: siswa harus milik sekolah user
+	var siswaSekolah int
+	if err := db.QueryRow(`SELECT sekolah_id FROM siswa WHERE id=$1`, sid).Scan(&siswaSekolah); err != nil || siswaSekolah != c.SekolahID {
+		http.Error(w, "Rapor tidak ditemukan", 404)
+		return
+	}
 	ta := r.URL.Query().Get("tahun_ajaran")
 	if ta == "" {
-		ta = "2026/2027"
+		ta = tahunAjaranAktif()
 	}
 	var nama, nis, kelas, ortu string
 	db.QueryRow(`SELECT nama, COALESCE(nis,''), kelas, COALESCE(nama_ortu,'') FROM siswa WHERE id=$1`, sid).Scan(&nama, &nis, &kelas, &ortu)

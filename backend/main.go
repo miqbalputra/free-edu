@@ -33,6 +33,12 @@ func main() {
 		log.Fatal("jwt secret: ", err)
 	}
 	jwtSecret = sec
+	// rotasi log tiap 6 jam
+	go func() {
+		for range time.Tick(6 * time.Hour) {
+			rotateLog()
+		}
+	}()
 	if err := migrate(); err != nil {
 		log.Fatal("migrate: ", err)
 	}
@@ -46,6 +52,9 @@ func main() {
 	mux := http.NewServeMux()
 	registerRoutes(mux)
 	mux.HandleFunc("GET /assets/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		http.ServeFile(w, r, "../frontend/"+strings.TrimPrefix(r.URL.Path, "/"))
+	}))
+	mux.HandleFunc("GET /icons/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		http.ServeFile(w, r, "../frontend/"+strings.TrimPrefix(r.URL.Path, "/"))
 	}))
 	// Landing page promosi di /, aplikasi di /app/
@@ -75,9 +84,25 @@ func main() {
 
 func cors(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Set("Access-Control-Allow-Origin", "*")
-		w.Header().Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-		w.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+		// Security headers
+		h := w.Header()
+		h.Set("X-Content-Type-Options", "nosniff")
+		h.Set("X-Frame-Options", "DENY")
+		h.Set("Referrer-Policy", "strict-origin-when-cross-origin")
+		h.Set("Permissions-Policy", "camera=(), microphone=(), geolocation=()")
+		h.Set("Content-Security-Policy", "default-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data:; script-src 'self' 'unsafe-inline'")
+		// CORS hanya untuk origin yang diizinkan (same-origin tidak butuh CORS)
+		origin := r.Header.Get("Origin")
+		allowed := []string{"https://app.sistemflow.com", "https://sistemflow.com", "https://meaning-wagon-fairfield-walking.trycloudflare.com"}
+		for _, a := range allowed {
+			if origin == a {
+				h.Set("Access-Control-Allow-Origin", origin)
+				h.Set("Vary", "Origin")
+				h.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+				h.Set("Access-Control-Allow-Headers", "Content-Type, Authorization")
+				break
+			}
+		}
 		if r.Method == http.MethodOptions {
 			w.WriteHeader(http.StatusNoContent)
 			return
