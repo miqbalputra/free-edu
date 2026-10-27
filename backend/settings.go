@@ -118,11 +118,28 @@ func getCatatan(sid int, ta string) (cw, ek, pr string) {
 	return
 }
 
+func cekSiswaTenant(w http.ResponseWriter, sid int, sekolahID int) bool {
+	var sSekolah int
+	if err := db.QueryRow(`SELECT sekolah_id FROM siswa WHERE id=$1`, sid).Scan(&sSekolah); err != nil || sSekolah != sekolahID {
+		jsonErr(w, 404, "Siswa tidak ditemukan")
+		return false
+	}
+	return true
+}
+
 func handleGetCatatanRapor(w http.ResponseWriter, r *http.Request) {
+	c := userFromContext(r)
+	if c == nil {
+		jsonErr(w, 401, "Unauthorized")
+		return
+	}
 	sid, _ := strconv.Atoi(r.PathValue("id"))
+	if !cekSiswaTenant(w, sid, c.SekolahID) {
+		return
+	}
 	ta := r.URL.Query().Get("tahun_ajaran")
 	if ta == "" {
-		ta = "2026/2027"
+		ta = tahunAjaranAktif()
 	}
 	cw, ek, pr := getCatatan(sid, ta)
 	respond(w, 200, map[string]string{"catatan_wali": cw, "ekstrakurikuler": ek, "prestasi": pr})
@@ -130,6 +147,9 @@ func handleGetCatatanRapor(w http.ResponseWriter, r *http.Request) {
 
 func handleSaveCatatanRapor(w http.ResponseWriter, r *http.Request, c *Claims) {
 	sid, _ := strconv.Atoi(r.PathValue("id"))
+	if !cekSiswaTenant(w, sid, c.SekolahID) {
+		return
+	}
 	var in struct {
 		TahunAjaran    string `json:"tahun_ajaran"`
 		CatatanWali    string `json:"catatan_wali"`
@@ -138,7 +158,7 @@ func handleSaveCatatanRapor(w http.ResponseWriter, r *http.Request, c *Claims) {
 	}
 	json.NewDecoder(r.Body).Decode(&in)
 	if in.TahunAjaran == "" {
-		in.TahunAjaran = "2026/2027"
+		in.TahunAjaran = tahunAjaranAktif()
 	}
 	_, err := db.Exec(`INSERT INTO rapor_catatan (siswa_id, tahun_ajaran, catatan_wali, ekstrakurikuler, prestasi, wali_id)
 		VALUES ($1,$2,$3,$4,$5,$6)

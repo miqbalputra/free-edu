@@ -105,7 +105,7 @@ func registerRoutes(mux *http.ServeMux) {
 	api.Handle("PUT /api/rapor-catatan/{id}", authMiddleware(roleMW(handleSaveCatatanRapor, "guru", "kepala_sekolah")))
 
 	// User management (kepala sekolah)
-	api.Handle("GET /api/users", authMiddleware(roleMW(handleListUsers, "kepala_sekolah")))
+	api.Handle("GET /api/users", authMiddleware(roleMW(handleListUsers, "kepala_sekolah", "platform")))
 	api.Handle("POST /api/users", authMiddleware(roleMW(handleCreateUser, "kepala_sekolah")))
 	api.Handle("DELETE /api/users/{id}", authMiddleware(roleMW(handleDeleteUser, "kepala_sekolah")))
 
@@ -904,7 +904,15 @@ func handleCreateJadwal(w http.ResponseWriter, r *http.Request, c *Claims) {
 // ---------- USERS ----------
 
 func handleListUsers(w http.ResponseWriter, r *http.Request, c *Claims) {
-	rows, err := db.Query(`SELECT id,nama,email,role,COALESCE(nip,'') FROM users ORDER BY role, nama`)
+	// platform admin lihat semua; sekolah lain hanya user-nya sendiri
+	q := `SELECT id,nama,email,role,COALESCE(nip,''), COALESCE(sekolah_id,0) FROM users`
+	args := []interface{}{}
+	if c.Role != "platform" {
+		q += ` WHERE sekolah_id=$1`
+		args = append(args, c.SekolahID)
+	}
+	q += ` ORDER BY role, nama`
+	rows, err := db.Query(q, args...)
 	if err != nil {
 		jsonErr(w, 500, err.Error())
 		return
@@ -912,9 +920,9 @@ func handleListUsers(w http.ResponseWriter, r *http.Request, c *Claims) {
 	defer rows.Close()
 	list := []map[string]interface{}{}
 	for rows.Next() {
-		var id int
+		var id, sid int
 		var nama, email, role, nip string
-		rows.Scan(&id, &nama, &email, &role, &nip)
+		rows.Scan(&id, &nama, &email, &role, &nip, &sid)
 		list = append(list, map[string]interface{}{"id": id, "nama": nama, "email": email, "role": role, "nip": nip})
 	}
 	respond(w, 200, list)

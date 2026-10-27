@@ -114,10 +114,20 @@ func handleExportKeuangan(w http.ResponseWriter, r *http.Request) {
 // ---------- RAPOR ----------
 
 func handleRaporData(w http.ResponseWriter, r *http.Request) {
+	c := userFromContext(r)
+	if c == nil {
+		jsonErr(w, 401, "Unauthorized")
+		return
+	}
 	sid, _ := strconv.Atoi(r.PathValue("id"))
+	var siswaSekolah int
+	if err := db.QueryRow(`SELECT sekolah_id FROM siswa WHERE id=$1`, sid).Scan(&siswaSekolah); err != nil || siswaSekolah != c.SekolahID {
+		jsonErr(w, 404, "Siswa tidak ditemukan")
+		return
+	}
 	ta := r.URL.Query().Get("tahun_ajaran")
 	if ta == "" {
-		ta = "2026/2027"
+		ta = tahunAjaranAktif()
 	}
 	var nama, nis, kelas, ortu, hp string
 	err := db.QueryRow(`SELECT nama, COALESCE(nis,''), kelas, COALESCE(nama_ortu,''), COALESCE(hp_ortu,'') FROM siswa WHERE id=$1`, sid).
