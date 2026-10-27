@@ -17,7 +17,7 @@ func handleGetPengaturan(w http.ResponseWriter, r *http.Request) {
 	err := db.QueryRow(`SELECT nama_sekolah, COALESCE(alamat,''), COALESCE(npsn,''), COALESCE(kepala_sekolah,''), tahun_ajaran_aktif, semester_aktif FROM pengaturan WHERE id=1`).
 		Scan(&nama, &alamat, &npsn, &kepala, &ta, &sem)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	respond(w, 200, map[string]string{
@@ -32,7 +32,7 @@ func handleUpdatePengaturan(w http.ResponseWriter, r *http.Request, c *Claims) {
 	_, err := db.Exec(`UPDATE pengaturan SET nama_sekolah=$1, alamat=$2, npsn=$3, kepala_sekolah=$4, tahun_ajaran_aktif=$5, semester_aktif=$6 WHERE id=1`,
 		in["nama_sekolah"], in["alamat"], in["npsn"], in["kepala_sekolah"], in["tahun_ajaran_aktif"], in["semester_aktif"])
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	logActivity(c.UserID, "update_pengaturan", "Memperbarui pengaturan sekolah")
@@ -69,7 +69,7 @@ func handleResetPassword(w http.ResponseWriter, r *http.Request, c *Claims) {
 	hash, _ := bcrypt.GenerateFromPassword([]byte(newPass), bcrypt.DefaultCost)
 	res, err := db.Exec(`UPDATE users SET password=$1 WHERE id=$2`, string(hash), id)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
@@ -97,7 +97,7 @@ func handleUbahPassword(w http.ResponseWriter, r *http.Request, c *Claims) {
 	}
 	var hash string
 	if err := db.QueryRow(`SELECT password FROM users WHERE id=$1`, c.UserID).Scan(&hash); err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	if !checkPass(hash, in.Lama) {
@@ -165,7 +165,7 @@ func handleSaveCatatanRapor(w http.ResponseWriter, r *http.Request, c *Claims) {
 		ON CONFLICT (siswa_id, tahun_ajaran) DO UPDATE SET catatan_wali=EXCLUDED.catatan_wali, ekstrakurikuler=EXCLUDED.ekstrakurikuler, prestasi=EXCLUDED.prestasi, wali_id=EXCLUDED.wali_id`,
 		sid, in.TahunAjaran, in.CatatanWali, in.Ekstrakurikuler, in.Prestasi, c.UserID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	logActivity(c.UserID, "update_rapor", "Menyimpan catatan rapor siswa ID "+itoa(sid))
@@ -178,7 +178,7 @@ func handleListLog(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`SELECT l.id, COALESCE(u.nama,'-'), l.aksi, COALESCE(l.detail,''), l.waktu::text
 		FROM activity_log l LEFT JOIN users u ON u.id=l.user_id ORDER BY l.waktu DESC, l.id DESC LIMIT 200`)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()
@@ -197,7 +197,7 @@ func handleListLog(w http.ResponseWriter, r *http.Request) {
 func deleteOwned(w http.ResponseWriter, table string, id int, sekolahID int, col string) bool {
 	res, err := db.Exec(`DELETE FROM `+table+` WHERE id=$1 AND `+col+`=$2`, id, sekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return false
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
@@ -212,7 +212,7 @@ func handleDeleteNilai(w http.ResponseWriter, r *http.Request, c *Claims) {
 	// nilai Join ke siswa untuk cek tenant
 	res, err := db.Exec(`DELETE FROM nilai n USING siswa s WHERE n.id=$1 AND n.siswa_id=s.id AND s.sekolah_id=$2`, id, c.SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
@@ -226,7 +226,7 @@ func handleDeleteHafalan(w http.ResponseWriter, r *http.Request, c *Claims) {
 	id, _ := strconv.Atoi(r.PathValue("id"))
 	res, err := db.Exec(`DELETE FROM hafalan h USING siswa s WHERE h.id=$1 AND h.siswa_id=s.id AND s.sekolah_id=$2`, id, c.SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
@@ -279,7 +279,7 @@ func handleDeleteUser(w http.ResponseWriter, r *http.Request, c *Claims) {
 	}
 	res, err := db.Exec(`DELETE FROM users WHERE id=$1`, id)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
@@ -295,7 +295,7 @@ func handleDeleteUser(w http.ResponseWriter, r *http.Request, c *Claims) {
 func handleListWali(w http.ResponseWriter, r *http.Request, c *Claims) {
 	rows, err := db.Query(`SELECT w.kelas, u.nama, u.id FROM wali_kelas w JOIN users u ON u.id=w.user_id WHERE w.sekolah_id=$1 ORDER BY w.kelas`, c.SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()
@@ -363,7 +363,7 @@ func handleUpdateJadwal(w http.ResponseWriter, r *http.Request, c *Claims) {
 	res, err := db.Exec(`UPDATE jadwal SET kelas=$1, hari=$2, jam_mulai=$3::TIME, jam_selesai=$4::TIME, mapel=$5, guru_id=NULLIF($6,0)
 		WHERE id=$7 AND sekolah_id=$8`, in.Kelas, in.Hari, in.JamMulai, in.JamSelesai, in.Mapel, in.GuruID, id, c.SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
@@ -386,7 +386,7 @@ func handleUpdateAgenda(w http.ResponseWriter, r *http.Request, c *Claims) {
 	res, err := db.Exec(`UPDATE agenda SET judul=$1, deskripsi=NULLIF($2,''), tanggal=$3, waktu=NULLIF($4,'')::TIME, lokasi=NULLIF($5,'')
 		WHERE id=$6 AND sekolah_id=$7`, in.Judul, in.Deskripsi, in.Tanggal, in.Waktu, in.Lokasi, id, c.SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
@@ -412,7 +412,7 @@ func handleUpdatePengumuman(w http.ResponseWriter, r *http.Request, c *Claims) {
 	res, err := db.Exec(`UPDATE pengumuman SET judul=$1, isi=$2, target=$3 WHERE id=$4 AND sekolah_id=$5`,
 		in.Judul, in.Isi, in.Target, id, c.SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	if n, _ := res.RowsAffected(); n == 0 {

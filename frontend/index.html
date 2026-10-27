@@ -394,8 +394,8 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
         <div class="toolbar">
           <select v-model="filterKelasN"><option value="">Semua Kelas</option><option v-for="k in kelasList" :value="k">{{ k }}</option></select>
           <select v-model="filterMapel"><option value="">Semua Mapel</option><option v-for="m in mapelList" :value="m">{{ m }}</option></select>
-          <button class="btn" @click="openNilai()">+ Input Nilai</button>
-          <button class="btn" style="background:var(--accent)" @click="openBulk">⚡ Nilai Massal</button>
+          <button v-if="user.role!=='tu'" class="btn" @click="openNilai()">+ Input Nilai</button>
+          <button v-if="user.role!=='tu'" class="btn" style="background:var(--accent)" @click="openBulk">⚡ Nilai Massal</button>
           <button class="btn sec" @click="exportCSV('nilai')">⬇️ Ekspor Excel <span v-if="langganan.plan==='gratis'" style="font-size:10px">🔒</span></button>
         </div>
         <table v-if="nilai.length">
@@ -408,7 +408,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
       <!-- HAFALAN -->
       <div v-if="page==='hafalan'" class="panel">
         <div class="toolbar">
-          <button class="btn" @click="modalHafalan=true">+ Catat Setoran Hafalan</button>
+          <button v-if="user.role!=='tu'" class="btn" @click="modalHafalan=true">+ Catat Setoran Hafalan</button>
         </div>
         <table v-if="hafalan.length">
           <tr><th>Siswa</th><th>Surah</th><th>Ayat</th><th>Status</th><th>Tanggal</th><th>Catatan</th><th></th></tr>
@@ -903,7 +903,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
 </div>
 
 <script>
-const { createApp, ref, computed, onMounted } = Vue;
+const { createApp, ref, computed, onMounted, watch } = Vue;
 createApp({
   setup() {
     const API = location.origin; // API & frontend served from same origin via Go
@@ -928,11 +928,11 @@ createApp({
     const modalSiswa = ref(false); const modalNilai = ref(false); const modalHafalan = ref(false);
     const modalSPP = ref(false); const modalAgenda = ref(false); const modalPengumuman = ref(false);
     const modalJadwal = ref(false); const modalUser = ref(false);
-    const formSiswa = ref({}); const formNilai = ref({ semester:'ganjil', tahun_ajaran:'2026/2027' });
+    const formSiswa = ref({}); const formNilai = ref({ semester:'ganjil', tahun_ajaran:'' });
     const formHafalan = ref({}); const formSPP = ref({ tahun: String(new Date().getFullYear()) });
     const formAgenda = ref({}); const formPengumuman = ref({ target:'semua' });
     const formJadwal = ref({}); const formUser = ref({ role:'guru' });
-    const rapor = ref(null); const raporSiswa = ref(null); const raporTA = ref('2026/2027');
+    const rapor = ref(null); const raporSiswa = ref(null); const raporTA = ref('');
     const modalBulk = ref(false);
     const bulk = ref({ kelas:'', mapel:'', jenis:'tugas', semester:'ganjil', items:[] });
     const set = ref({}); const logs = ref([]); const pw = ref({lama:'',baru:''});
@@ -1088,7 +1088,7 @@ createApp({
       try {
         const r = await api('/api/nilai-bulk', {method:'POST', body: JSON.stringify({
           kelas: bulk.value.kelas, mapel: bulk.value.mapel, jenis: bulk.value.jenis, semester: bulk.value.semester,
-          tahun_ajaran: '2026/2027', items: bulk.value.items.filter(i=>i.nilai>0).map(i=>({siswa_id:i.siswa_id, nilai:i.nilai}))
+          tahun_ajaran: (set.value && set.value.tahun_ajaran_aktif) || '2026/2027', items: bulk.value.items.filter(i=>i.nilai>0).map(i=>({siswa_id:i.siswa_id, nilai:i.nilai}))
         })});
         modalBulk.value = false;
         showToast(r.saved+' nilai tersimpan ✅'+(r.skipped? ' ('+r.skipped+' dilewati)':''));
@@ -1122,7 +1122,7 @@ createApp({
       catch(e){ showToast(e.message, true); }
     }
     // nilai
-    function openNilai(){ formNilai.value = {semester:'ganjil', tahun_ajaran:'2026/2027'}; modalNilai.value=true; }
+    function openNilai(){ formNilai.value = {semester:'ganjil', tahun_ajaran:(set.value && set.value.tahun_ajaran_aktif) || '2026/2027'}; modalNilai.value=true; }
     async function saveNilai(){
       try { await api('/api/nilai',{method:'POST',body:JSON.stringify(formNilai.value)}); modalNilai.value=false; showToast('Nilai tersimpan ✅'); load('nilai'); }
       catch(e){ showToast(e.message,true); }
@@ -1203,10 +1203,10 @@ createApp({
         showToast('Wali kelas disimpan ✅'); loadWali(); }
       catch(e){ showToast(e.message,true); }
     }
-    watch(page, (p)=>{ if(p==='rekap') loadRekap(); if(p==='wali') loadWali(); if(p==='admin') loadAdmin(); });
+    watch(page, (p)=>{ if(p) load(p); if(p==='rekap') loadRekap(); if(p==='wali') loadWali(); if(p==='admin') loadAdmin(); });
 
     onMounted(() => { if (token.value) { load('dashboard'); api('/api/pengaturan').then(p=>{ set.value=p; raporTA.value=p.tahun_ajaran_aktif||'2026/2027'; }).catch(()=>{}); } });
-    return { API, token, user, page, loading, toast, toastErr, login, dash, siswa, nilai, hafalan, jadwal, spp, pengeluaran, agenda, pengumuman, users,
+    return { API, token, user, page, loading, toast, toastErr, login, dash, siswa, nilai, hafalan, jadwal, spp, pengeluaran, agenda, pengumuman, users, watch, ref, computed,
       absSiswa, absGuru, keu, absTanggal, absKelas, absGTanggal, qSiswa, filterKelas, filterKelasN, filterMapel, filterKelasJ, sppBulan, sppStatus,
       pengUraian, pengKategori, pengJumlah, modalSiswa, modalNilai, modalHafalan, modalSPP, modalAgenda, modalPengumuman, modalJadwal, modalUser,
       formSiswa, formNilai, formHafalan, formSPP, formAgenda, formPengumuman, formJadwal, formUser, rapor, raporSiswa, raporTA, modalBulk, bulk,

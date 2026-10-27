@@ -175,7 +175,7 @@ func handleDaftar(w http.ResponseWriter, r *http.Request) {
 	var sid int
 	err := db.QueryRow(`INSERT INTO sekolah (subdomain, nama, status) VALUES ($1,$2,'trial') RETURNING id`, in.Subdomain, in.NamaSekolah).Scan(&sid)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	db.Exec(`INSERT INTO langganan (sekolah_id, paket, status, catatan) VALUES ($1,'gratis','aktif','Trial 14 hari')`, sid)
@@ -233,7 +233,7 @@ func handleNotifSPP(w http.ResponseWriter, r *http.Request) {
 		WHERE sp.bulan=$1 AND sp.tahun=$2 AND sp.status='belum' AND s.sekolah_id=$3 AND s.hp_ortu <> ''`,
 		bulan, tahun, c.SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()

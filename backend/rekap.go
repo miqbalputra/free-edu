@@ -36,7 +36,7 @@ func handleRekapBulanan(w http.ResponseWriter, r *http.Request, c *Claims) {
 			COUNT(*) FILTER (WHERE a.status='sakit'),
 			COUNT(*) FILTER (WHERE a.status='izin'),
 			COUNT(*) FILTER (WHERE a.status='alpa')
-		FROM absensi a JOIN siswa s ON s.id=a.siswa_id
+		FROM absensi_siswa a JOIN siswa s ON s.id=a.siswa_id
 		WHERE s.sekolah_id=$1 AND to_char(a.tanggal,'YYYY-MM')=$2
 		GROUP BY s.kelas ORDER BY s.kelas`, c.SekolahID, bulan)
 	if err == nil {
@@ -56,7 +56,7 @@ func handleRekapBulanan(w http.ResponseWriter, r *http.Request, c *Claims) {
 	db.QueryRow(`SELECT COUNT(*) FILTER (WHERE sp.status='lunas'), COUNT(*) FILTER (WHERE sp.status!='lunas'),
 			COALESCE(SUM(sp.jumlah) FILTER (WHERE sp.status='lunas'),0)
 		FROM spp sp JOIN siswa s ON s.id=sp.siswa_id
-		WHERE s.sekolah_id=$1 AND sp.bulan_bulan=$2`, c.SekolahID, bulanNumName(bulan)).
+		WHERE s.sekolah_id=$1 AND sp.bulan=$2`, c.SekolahID, bulanNumName(bulan)).
 		Scan(&lunas, &belum, &totalLunas)
 	out["spp"] = map[string]interface{}{"lunas": lunas, "belum": belum, "total_lunas": totalLunas}
 

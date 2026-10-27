@@ -251,7 +251,7 @@ func handleListSiswa(w http.ResponseWriter, r *http.Request) {
 	q += where + ` ORDER BY kelas, nama LIMIT ` + itoa(limit) + ` OFFSET ` + itoa(offset)
 	rows, err := db.Query(q, args...)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()
@@ -305,7 +305,7 @@ func handleCreateSiswa(w http.ResponseWriter, r *http.Request, c *Claims) {
 	err = db.QueryRow(`INSERT INTO siswa (nis,nisn,nama,jk,kelas,tgl_lahir,alamat,nama_ortu,hp_ortu,sekolah_id) VALUES (NULLIF($1,''),NULLIF($2,''),$3,NULLIF($4,''),$5,NULLIF($6,'')::DATE,NULLIF($7,''),NULLIF($8,''),NULLIF($9,''),$10) RETURNING id`,
 		sval(in, "nis"), sval(in, "nisn"), sval(in, "nama"), sval(in, "jk"), sval(in, "kelas"), sval(in, "tgl_lahir"), sval(in, "alamat"), sval(in, "nama_ortu"), sval(in, "hp_ortu"), c.SekolahID).Scan(&id)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	respond(w, 201, map[string]interface{}{"id": id})
@@ -321,7 +321,7 @@ func handleUpdateSiswa(w http.ResponseWriter, r *http.Request, c *Claims) {
 	res, err := db.Exec(`UPDATE siswa SET nis=NULLIF($1,''), nisn=NULLIF($2,''), nama=$3, jk=NULLIF($4,''), kelas=$5, tgl_lahir=NULLIF($6,'')::DATE, alamat=NULLIF($7,''), nama_ortu=NULLIF($8,''), hp_ortu=NULLIF($9,''), status=COALESCE(NULLIF($10,''),'aktif') WHERE id=$11 AND sekolah_id=$12`,
 		sval(in, "nis"), sval(in, "nisn"), sval(in, "nama"), sval(in, "jk"), sval(in, "kelas"), sval(in, "tgl_lahir"), sval(in, "alamat"), sval(in, "nama_ortu"), sval(in, "hp_ortu"), sval(in, "status"), id, c.SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
@@ -340,22 +340,22 @@ func handleDeleteSiswa(w http.ResponseWriter, r *http.Request, c *Claims) {
 	}
 	tx, err := db.Begin()
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer tx.Rollback()
 	for _, t := range []string{"absensi_siswa", "nilai", "hafalan", "spp"} {
 		if _, err := tx.Exec(`DELETE FROM `+t+` WHERE siswa_id=$1`, id); err != nil {
-			jsonErr(w, 500, err.Error())
+			jsonErr(w, 500, userErr(err))
 			return
 		}
 	}
 	if _, err := tx.Exec(`DELETE FROM siswa WHERE id=$1`, id); err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	if err := tx.Commit(); err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	respond(w, 200, map[string]string{"ok": "1"})
@@ -381,7 +381,7 @@ func handleListAbsensiSiswa(w http.ResponseWriter, r *http.Request) {
 	q += ` ORDER BY s.kelas, s.nama`
 	rows, err := db.Query(q, args...)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()
@@ -433,7 +433,7 @@ func handleListAbsensiGuru(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`SELECT u.id, u.nama, u.role, COALESCE(g.jam_masuk::text,''), COALESCE(g.jam_pulang::text,''), COALESCE(g.status,''), COALESCE(g.keterangan,'')
 		FROM users u LEFT JOIN absensi_guru g ON g.guru_id=u.id AND g.tanggal=$1 WHERE u.sekolah_id=$2 ORDER BY u.role, u.nama`, tanggal, userFromContext(r).SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()
@@ -451,7 +451,7 @@ func handleAbsenMasuk(w http.ResponseWriter, r *http.Request, c *Claims) {
 	_, err := db.Exec(`INSERT INTO absensi_guru (guru_id,tanggal,jam_masuk,status) VALUES ($1,CURRENT_DATE,CURRENT_TIME,'hadir')
 		ON CONFLICT (guru_id,tanggal) DO UPDATE SET jam_masuk=CURRENT_TIME, status='hadir'`, c.UserID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	respond(w, 200, map[string]string{"ok": "1"})
@@ -461,7 +461,7 @@ func handleAbsenPulang(w http.ResponseWriter, r *http.Request, c *Claims) {
 	_, err := db.Exec(`INSERT INTO absensi_guru (guru_id,tanggal,jam_masuk,status) VALUES ($1,CURRENT_DATE,CURRENT_TIME,'hadir')
 		ON CONFLICT (guru_id,tanggal) DO UPDATE SET jam_pulang=CURRENT_TIME`, c.UserID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	respond(w, 200, map[string]string{"ok": "1"})
@@ -490,7 +490,7 @@ func handleListNilai(w http.ResponseWriter, r *http.Request) {
 	base += ` ORDER BY n.kelas, s.nama, n.mapel LIMIT ` + strconv.Itoa(limit) + ` OFFSET ` + strconv.Itoa(offset)
 	rows, err := db.Query(base, args...)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()
@@ -547,7 +547,7 @@ func handleUpsertNilai(w http.ResponseWriter, r *http.Request, c *Claims) {
 		ON CONFLICT (siswa_id,mapel,jenis,semester,tahun_ajaran) DO UPDATE SET nilai=EXCLUDED.nilai, guru_id=EXCLUDED.guru_id`,
 		in.SiswaID, in.Mapel, in.Kelas, in.Jenis, in.Semester, in.TahunAjaran, in.Nilai, c.UserID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	respond(w, 200, map[string]string{"ok": "1"})
@@ -566,7 +566,7 @@ func handleListHafalan(w http.ResponseWriter, r *http.Request) {
 	q += ` ORDER BY h.tanggal DESC LIMIT 200`
 	rows, err := db.Query(q, args...)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()
@@ -597,7 +597,7 @@ func handleCreateHafalan(w http.ResponseWriter, r *http.Request, c *Claims) {
 	_, err := db.Exec(`INSERT INTO hafalan (siswa_id,surah,ayat_dari,ayat_sampai,status,penyetor_guru_id,catatan) VALUES ($1,$2,$3,$4,$5,$6,NULLIF($7,''))`,
 		in.SiswaID, in.Surah, in.AyatDari, in.AyatSampai, in.Status, c.UserID, in.Catatan)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	respond(w, 201, map[string]string{"ok": "1"})
@@ -626,7 +626,7 @@ func handleListSPP(w http.ResponseWriter, r *http.Request) {
 	base += ` ORDER BY s.kelas, s.nama LIMIT ` + strconv.Itoa(limit) + ` OFFSET ` + strconv.Itoa(offset)
 	rows, err := db.Query(base, args...)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()
@@ -663,7 +663,7 @@ func handleGenerateSPP(w http.ResponseWriter, r *http.Request, c *Claims) {
 	}
 	rows, err := db.Query(`SELECT id FROM siswa WHERE status='aktif' AND sekolah_id=$1`, c.SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	var ids []int
@@ -675,7 +675,7 @@ func handleGenerateSPP(w http.ResponseWriter, r *http.Request, c *Claims) {
 	rows.Close()
 	tx, err := db.Begin()
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer tx.Rollback()
@@ -687,7 +687,7 @@ func handleGenerateSPP(w http.ResponseWriter, r *http.Request, c *Claims) {
 		}
 	}
 	if err := tx.Commit(); err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	logActivity(c.UserID, "generate_spp", "Generate SPP "+in.Bulan+" "+in.Tahun+": "+itoa(n)+" tagihan")
@@ -705,7 +705,7 @@ func handleBayarSPP(w http.ResponseWriter, r *http.Request, c *Claims) {
 	}
 	_, err := db.Exec(`UPDATE spp SET status='lunas', tgl_bayar=CURRENT_DATE, metode=$1, petugas_id=$2 WHERE id=$3`, in.Metode, c.UserID, id)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	respond(w, 200, map[string]string{"ok": "1"})
@@ -722,7 +722,7 @@ func handleRingkasanKeuangan(w http.ResponseWriter, r *http.Request) {
 	db.QueryRow(`SELECT COUNT(*) FROM spp WHERE status='belum' AND sekolah_id=$1`, sid).Scan(&sppBelum)
 	rows, err := db.Query(`SELECT kategori, COALESCE(SUM(jumlah),0) FROM pengeluaran WHERE sekolah_id=$1 GROUP BY kategori ORDER BY 2 DESC`, sid)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()
@@ -742,7 +742,7 @@ func handleRingkasanKeuangan(w http.ResponseWriter, r *http.Request) {
 func handleListPengeluaran(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`SELECT id, tanggal::text, uraian, COALESCE(kategori,''), jumlah FROM pengeluaran WHERE sekolah_id=$1 ORDER BY tanggal DESC, id DESC LIMIT 200`, userFromContext(r).SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()
@@ -770,7 +770,7 @@ func handleCreatePengeluaran(w http.ResponseWriter, r *http.Request, c *Claims) 
 	}
 	_, err := db.Exec(`INSERT INTO pengeluaran (uraian,kategori,jumlah,pencatat_id,sekolah_id) VALUES ($1,NULLIF($2,''),$3,$4,$5)`, in.Uraian, in.Kategori, in.Jumlah, c.UserID, c.SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	respond(w, 201, map[string]string{"ok": "1"})
@@ -781,7 +781,7 @@ func handleCreatePengeluaran(w http.ResponseWriter, r *http.Request, c *Claims) 
 func handleListPengumuman(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`SELECT p.id, p.judul, p.isi, p.target, p.created_at::text, u.nama FROM pengumuman p JOIN users u ON u.id=p.pembuat_id WHERE p.sekolah_id=$1 ORDER BY p.created_at DESC LIMIT 100`, userFromContext(r).SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()
@@ -809,7 +809,7 @@ func handleCreatePengumuman(w http.ResponseWriter, r *http.Request, c *Claims) {
 	}
 	_, err := db.Exec(`INSERT INTO pengumuman (judul,isi,target,pembuat_id,sekolah_id) VALUES ($1,$2,$3,$4,$5)`, in.Judul, in.Isi, in.Target, c.UserID, c.SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	respond(w, 201, map[string]string{"ok": "1"})
@@ -827,7 +827,7 @@ func handleListAgenda(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`SELECT a.id, a.judul, COALESCE(a.deskripsi,''), a.tanggal::text, COALESCE(a.waktu::text,''), COALESCE(a.lokasi,''), u.nama
 		FROM agenda a JOIN users u ON u.id=a.pembuat_id WHERE a.sekolah_id=$1 ORDER BY a.tanggal, a.waktu LIMIT 100`, userFromContext(r).SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()
@@ -853,7 +853,7 @@ func handleCreateAgenda(w http.ResponseWriter, r *http.Request, c *Claims) {
 	_, err := db.Exec(`INSERT INTO agenda (judul,deskripsi,tanggal,waktu,lokasi,pembuat_id,sekolah_id) VALUES ($1,NULLIF($2,''),$3,NULLIF($4,'')::TIME,NULLIF($5,''),$6,$7)`,
 		in.Judul, in.Deskripsi, in.Tanggal, in.Waktu, in.Lokasi, c.UserID, c.SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	respond(w, 201, map[string]string{"ok": "1"})
@@ -872,7 +872,7 @@ func handleListJadwal(w http.ResponseWriter, r *http.Request) {
 	q += ` ORDER BY ARRAY_POSITION(ARRAY['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'], j.hari), j.jam_mulai`
 	rows, err := db.Query(q, args...)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()
@@ -899,7 +899,7 @@ func handleCreateJadwal(w http.ResponseWriter, r *http.Request, c *Claims) {
 	_, err := db.Exec(`INSERT INTO jadwal (kelas,hari,jam_mulai,jam_selesai,mapel,guru_id) VALUES ($1,$2,$3,$4,$5,NULLIF($6,0))`,
 		in.Kelas, in.Hari, in.JamMulai, in.JamSelesai, in.Mapel, in.GuruID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	respond(w, 201, map[string]string{"ok": "1"})
@@ -918,7 +918,7 @@ func handleListUsers(w http.ResponseWriter, r *http.Request, c *Claims) {
 	q += ` ORDER BY role, nama`
 	rows, err := db.Query(q, args...)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()
@@ -954,7 +954,7 @@ func handleCreateUser(w http.ResponseWriter, r *http.Request, c *Claims) {
 	_, err := db.Exec(`INSERT INTO users (nama,email,password,role,nip,sekolah_id) VALUES ($1,$2,$3,$4,NULLIF($5,'-'),$6)`,
 		in.Nama, strings.ToLower(in.Email), hashPass(in.Password), in.Role, in.NIP, c.SekolahID)
 	if err != nil {
-		jsonErr(w, 500, "Email mungkin sudah dipakai: "+err.Error())
+		jsonErr(w, 409, userErr(err))
 		return
 	}
 	respond(w, 201, map[string]string{"ok": "1"})

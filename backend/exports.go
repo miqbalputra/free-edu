@@ -39,7 +39,7 @@ func handleExportAbsensi(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`SELECT s.nis, s.nama, s.kelas, a.tanggal::text, a.status, COALESCE(a.keterangan,'')
 		FROM absensi_siswa a JOIN siswa s ON s.id=a.siswa_id `+where+` ORDER BY a.tanggal, s.kelas, s.nama`, bulan, userFromContext(r).SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()
@@ -56,7 +56,7 @@ func handleExportSPP(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`SELECT s.nis, s.nama, s.kelas, sp.bulan, sp.tahun, sp.jumlah::text, sp.status, COALESCE(sp.tgl_bayar::text,'-'), COALESCE(sp.metode,'-')
 		FROM spp sp JOIN siswa s ON s.id=sp.siswa_id WHERE s.sekolah_id=$1 ORDER BY sp.tahun, sp.bulan, s.kelas, s.nama`, userFromContext(r).SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()
@@ -73,7 +73,7 @@ func handleExportNilai(w http.ResponseWriter, r *http.Request) {
 	rows, err := db.Query(`SELECT s.nis, s.nama, n.kelas, n.mapel, n.jenis, n.semester, n.tahun_ajaran, n.nilai::text
 		FROM nilai n JOIN siswa s ON s.id=n.siswa_id WHERE s.sekolah_id=$1 ORDER BY n.kelas, s.nama, n.mapel`, userFromContext(r).SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()
@@ -144,7 +144,7 @@ func handleRaporData(w http.ResponseWriter, r *http.Request) {
 	mmap := map[string]*mrow{}
 	rows, err := db.Query(`SELECT mapel, jenis, AVG(nilai) FROM nilai WHERE siswa_id=$1 AND tahun_ajaran=$2 GROUP BY mapel, jenis`, sid, ta)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	for rows.Next() {
@@ -257,7 +257,7 @@ func handleCetakRapor(w http.ResponseWriter, r *http.Request) {
 	cw, ek, pr := getCatatan(sid, ta)
 	rows, err := db.Query(`SELECT mapel, jenis, AVG(nilai) FROM nilai WHERE siswa_id=$1 AND tahun_ajaran=$2 GROUP BY mapel, jenis`, sid, ta)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	type mrow struct{ t, u, p, pas *float64 }
@@ -430,7 +430,7 @@ func handleSiswaByKelas(w http.ResponseWriter, r *http.Request) {
 	kelas := r.URL.Query().Get("kelas")
 	rows, err := db.Query(`SELECT id, nama, COALESCE(nis,'') FROM siswa WHERE status='aktif' AND kelas=$1 AND sekolah_id=$2 ORDER BY nama`, kelas, userFromContext(r).SekolahID)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()

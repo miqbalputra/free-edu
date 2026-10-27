@@ -21,7 +21,7 @@ func handleAdminSekolah(w http.ResponseWriter, r *http.Request, c *Claims) {
 		LEFT JOIN langganan l ON l.sekolah_id=s.id AND l.status='aktif'
 		ORDER BY s.id`)
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	defer rows.Close()
@@ -65,7 +65,7 @@ func handleAdminSetPlan(w http.ResponseWriter, r *http.Request, c *Claims) {
 	_, err := db.Exec(`INSERT INTO langganan (sekolah_id, paket, status, sampai, catatan) VALUES ($1,$2,'aktif',$3,$4)`,
 		in.SekolahID, in.Paket, sampai, "Diaktifkan via panel admin")
 	if err != nil {
-		jsonErr(w, 500, err.Error())
+		jsonErr(w, 500, userErr(err))
 		return
 	}
 	// kalau di-upgrade dari gratis/trial, sekolah jadi aktif penuh
