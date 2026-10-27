@@ -5,9 +5,20 @@ import (
 	"fmt"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/golang-jwt/jwt/v5"
 )
+
+
+var bulanIndo = map[string]string{"Jan":"Jan","Feb":"Feb","Mar":"Mar","Apr":"Apr","May":"Mei","Jun":"Jun","Jul":"Jul","Aug":"Ags","Sep":"Sep","Oct":"Okt","Nov":"Nov","Dec":"Des"}
+
+func tglIndo(s string) string {
+	for en, id := range bulanIndo {
+		s = strings.ReplaceAll(s, "TM"+en, id)
+	}
+	return s
+}
 
 // ---------- LAPORAN REKAP BULANAN (Fase C) ----------
 // Rekap satu bulan: absensi per kelas, SPP (lunas/belum + nominal), pengeluaran,
@@ -146,7 +157,7 @@ func handleKwitansi(w http.ResponseWriter, r *http.Request) {
 	var nama, kelas, bulan, tahun, tglBayar, metode, petugas, namaSekolah, alamat, kepala string
 	var jumlah float64
 	var sid int
-	err := db.QueryRow(`SELECT s.nama, s.kelas, sp.bulan, sp.tahun, COALESCE(to_char(sp.tgl_bayar,'DD Mon YYYY'),'-'),
+	err := db.QueryRow(`SELECT s.nama, s.kelas, sp.bulan, sp.tahun, COALESCE(to_char(sp.tgl_bayar,'DD TMBln YYYY'),'-'),
 			COALESCE(sp.metode,'tunai'), COALESCE(u.nama,'-'), sk.nama_sekolah, COALESCE(sk.alamat,''), COALESCE(sk.kepala_sekolah,''), sp.sekolah_id, sp.jumlah
 		FROM spp sp
 		JOIN siswa s ON s.id=sp.siswa_id
@@ -196,7 +207,7 @@ func handleKwitansi(w http.ResponseWriter, r *http.Request) {
  <div class="box">%s, ____________________<br>Kepala Sekolah</div></div>
  <div class="foot">Kwitansi ini sah dan dibuat otomatis oleh SIMAKA</div>
 </div></body></html>`,
-		nama, namaSekolah, alamat, itoa(id), bulan, nama, kelas, bulan, tahun, tglBayar, metode, petugas,
+		nama, namaSekolah, alamat, itoa(id), bulan, nama, kelas, bulan, tahun, tglIndo(tglBayar), metode, petugas,
 		fnumFmt(jumlah), petugas, namaSekolah)
 }
 

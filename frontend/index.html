@@ -149,12 +149,18 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
   .login-card{grid-template-columns:1fr}
   .login-hero{display:none}
   .shell{grid-template-columns:1fr}
-  .sidebar{flex-direction:row;align-items:center;overflow-x:auto;padding:0}
-  .brand,.userbox{display:none}
-  .nav{flex-direction:row;padding:8px}
+  .sidebar{flex-direction:column;position:fixed;bottom:0;left:0;right:0;z-index:50;background:var(--side);box-shadow:0 -4px 20px rgba(0,0,0,.25);border-radius:16px 16px 0 0}
+  .brand{display:none}
+  .userbox{display:flex;justify-content:space-between;align-items:center;padding:6px 12px;gap:8px}
+  .userbox .info b{font-size:12px}
+  .nav{flex-direction:row;overflow-x:auto;padding:6px 10px;gap:6px;-webkit-overflow-scrolling:touch}
   .nav .sec{display:none}
+  .nav button{white-space:nowrap;font-size:12.5px;padding:8px 12px}
   .grid2{grid-template-columns:1fr}
-  .main{padding:16px}
+  .main{padding:16px 14px 130px}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .toolbar{flex-wrap:wrap}
+  table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
 }
 </style>
 </head>
@@ -248,7 +254,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
         <div class="avatar">{{ initials }}</div>
         <div class="info"><b>{{ user.nama }}</b><small>{{ roleLabel }}</small></div>
         <button class="out" @click="toggleDark" :title="dark ? 'Mode terang' : 'Mode gelap'">{{ dark ? '☀️' : '🌙' }}</button>
-        <button class="out" @click="logout" title="Keluar">⎋</button>
+        <button class="out" @click="logout" :title="'Keluar dari akun ' + (user.nama||'')">Keluar ⎋</button>
       </div>
     </aside>
 
@@ -299,7 +305,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
             <div v-for="p in pengumuman.slice(0,3)" class="pengumuman-item">
               <b>{{ p.judul }}</b><p>{{ p.isi }}</p><small>{{ p.pembuat }} · {{ fmtDate(p.created_at) }}</small>
             </div>
-            <div v-if="!pengumuman.length" class="empty">Belum ada pengumuman</div>
+            <div v-if="!pengumuman.length" class="empty">Belum ada pengumuman.<br><small>Tekan tombol "+ Pengumuman" untuk membuat yang pertama.</small></div>
           </div>
         </div>
       </div>
@@ -361,7 +367,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
             <td><button class="btn sec sm" @click="openSiswa(s)">Edit</button> <button class="btn warn sm" @click="delSiswa(s)">Arsipkan</button></td>
           </tr>
         </table>
-        <div v-else class="empty">Belum ada siswa</div>
+        <div v-else class="empty">Belum ada siswa terdaftar.<br><small>Tekan tombol "+ Tambah Siswa" di atas untuk mendaftarkan siswa pertama.</small></div>
         <div class="pager" v-if="siswaPages>1">
           <button class="btn sec sm" :disabled="siswaPage<=1" @click="siswaPage--;load('siswa')">‹ Sebelumnya</button>
           <span>Halaman {{ siswaPage }} / {{ siswaPages }}</span>
@@ -402,7 +408,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           <tr><th>Siswa</th><th>Kelas</th><th>Mapel</th><th>Jenis</th><th>Semester</th><th>Tahun</th><th>Nilai</th><th></th></tr>
           <tr v-for="n in nilai"><td><b>{{ n.siswa }}</b></td><td>{{ n.kelas }}</td><td>{{ n.mapel }}</td><td>{{ n.jenis.toUpperCase() }}</td><td>{{ n.semester }}</td><td>{{ n.tahun_ajaran }}</td><td><b :style="{color:n.nilai>=75?'var(--ok)':'var(--danger)'}">{{ n.nilai }}</b></td><td><button class="btn warn sm" @click="delData('nilai', n.id)">Hapus</button></td></tr>
         </table>
-        <div v-else class="empty">Belum ada nilai</div>
+        <div v-else class="empty">Belum ada nilai.<br><small>Tekan "+ Input Nilai" lalu pilih siswa dan mata pelajaran.</small></div>
       </div>
 
       <!-- HAFALAN -->
@@ -416,7 +422,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
             <td><span class="badge" :class="'b-'+h.status">{{ h.status }}</span></td><td>{{ h.tanggal }}</td><td>{{ h.catatan }}</td>
             <td><button class="btn warn sm" @click="delData('hafalan', h.id)">Hapus</button></td></tr>
         </table>
-        <div v-else class="empty">Belum ada setoran hafalan</div>
+        <div v-else class="empty">Belum ada catatan hafalan.<br><small>Tekan "+ Catat Setoran Hafalan" untuk mencatat progres siswa.</small></div>
       </div>
 
       <!-- JADWAL -->
@@ -429,7 +435,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           <tr><th>Hari</th><th>Jam</th><th>Kelas</th><th>Mapel</th><th>Guru</th><th></th></tr>
           <tr v-for="j in jadwal"><td><b>{{ j.hari }}</b></td><td>{{ j.jam_mulai.slice(0,5) }}–{{ j.jam_selesai.slice(0,5) }}</td><td>{{ j.kelas }}</td><td>{{ j.mapel }}</td><td>{{ j.guru }}</td><td><button class="btn warn sm" @click="delData('jadwal', j.id)">Hapus</button></td></tr>
         </table>
-        <div v-else class="empty">Belum ada jadwal</div>
+        <div v-else class="empty">Belum ada jadwal pelajaran.<br><small>Tekan "+ Tambah Jadwal" untuk menyusun jadwal.</small></div>
       </div>
 
       <!-- ABSENSI GURU -->
@@ -462,7 +468,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
             <td><button v-if="t.status!=='lunas'" class="btn sm" @click="bayarSPP(t)">Tandai Lunas</button>
               <a v-if="t.status==='lunas'" class="btn sm sec" :href="API+'/kwitansi/'+t.id" target="_blank">🧾 Kwitansi</a></td></tr>
         </table>
-        <div v-else class="empty">Belum ada tagihan</div>
+        <div v-else class="empty">Belum ada tagihan SPP.<br><small>Tekan "⚡ Generate SPP" untuk membuat tagihan bulanan sekaligus.</small></div>
       </div>
 
       <!-- KEUANGAN -->
@@ -486,7 +492,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
             <h3>Pengeluaran Terakhir</h3>
             <table v-if="pengeluaran.length"><tr><th>Tanggal</th><th>Uraian</th><th>Jumlah</th><th></th></tr>
               <tr v-for="p in pengeluaran.slice(0,8)"><td>{{ p.tanggal }}</td><td>{{ p.uraian }} <small style="color:var(--muted)">({{ p.kategori }})</small></td><td>{{ rp(p.jumlah) }}</td><td><button class="btn warn sm" @click="delData('pengeluaran', p.id)">Hapus</button></td></tr></table>
-            <div v-else class="empty">Belum ada pengeluaran</div>
+            <div v-else class="empty">Belum ada catatan pengeluaran.<br><small>Tekan "+ Catat Pengeluaran" untuk mencatat biaya seperti alat tulis atau listrik.</small></div>
           </div>
         </div>
       </div>
@@ -544,7 +550,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           <small>{{ a.tanggal }} {{ a.waktu ? '· '+a.waktu.slice(0,5) : '' }} {{ a.lokasi ? '· 📍'+a.lokasi : '' }} · dibuat oleh {{ a.pembuat }}
             <button v-if="user.role!=='guru'" class="btn warn sm" style="float:right" @click="delData('agenda', a.id)">Hapus</button></small>
         </div>
-        <div v-if="!agenda.length" class="empty">Belum ada agenda</div>
+        <div v-if="!agenda.length" class="empty">Belum ada agenda.<br><small>Tekan "+ Agenda" untuk menambah kegiatan sekolah.</small></div>
       </div>
 
       <!-- PENGUMUMAN -->
@@ -555,7 +561,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           <small>{{ p.pembuat }} · {{ fmtDate(p.created_at) }} · target: {{ p.target }}
             <button v-if="['kepala_sekolah','tu'].includes(user.role)" class="btn warn sm" style="float:right" @click="delPengumuman(p)">Hapus</button></small>
         </div>
-        <div v-if="!pengumuman.length" class="empty">Belum ada pengumuman</div>
+        <div v-if="!pengumuman.length" class="empty">Belum ada pengumuman.<br><small>Tekan tombol "+ Pengumuman" untuk membuat yang pertama.</small></div>
       </div>
 
       <!-- PENGATURAN SEKOLAH -->
@@ -685,7 +691,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           <tr><th>Waktu</th><th>Pengguna</th><th>Aksi</th><th>Detail</th></tr>
           <tr v-for="l in logs"><td style="white-space:nowrap">{{ l.waktu.slice(0,19).replace('T',' ') }}</td><td><b>{{ l.user }}</b></td><td><span class="badge b-proses">{{ l.aksi }}</span></td><td>{{ l.detail }}</td></tr>
         </table>
-        <div v-else class="empty">Belum ada aktivitas</div>
+        <div v-else class="empty">Belum ada aktivitas tercatat.</div>
       </div>
 
       <!-- USERS -->
