@@ -18,74 +18,77 @@ func registerRoutes(mux *http.ServeMux) {
 	// Protected
 	api := http.NewServeMux()
 	api.Handle("GET /api/me", authMiddleware(http.HandlerFunc(handleMe)))
-	api.Handle("POST /api/pengumuman", authMiddleware(roleMW(handleCreatePengumuman, "kepala_sekolah", "tu", "guru")))
+	api.Handle("POST /api/pengumuman", authMiddleware(writeGuard(roleMW(handleCreatePengumuman, "kepala_sekolah", "tu", "guru"))))
 	api.Handle("GET /api/pengumuman", authMiddleware(http.HandlerFunc(handleListPengumuman)))
-	api.Handle("DELETE /api/pengumuman/{id}", authMiddleware(roleMW(handleDeletePengumuman, "kepala_sekolah", "tu")))
-	api.Handle("PUT /api/pengumuman/{id}", authMiddleware(roleMW(handleUpdatePengumuman, "kepala_sekolah", "tu")))
+	api.Handle("DELETE /api/pengumuman/{id}", authMiddleware(writeGuard(roleMW(handleDeletePengumuman, "kepala_sekolah", "tu"))))
+	api.Handle("PUT /api/pengumuman/{id}", authMiddleware(writeGuard(roleMW(handleUpdatePengumuman, "kepala_sekolah", "tu"))))
 
 	// Siswa
 	api.Handle("GET /api/siswa", authMiddleware(http.HandlerFunc(handleListSiswa)))
-	api.Handle("POST /api/siswa", authMiddleware(roleMW(handleCreateSiswa, "tu", "kepala_sekolah")))
-	api.Handle("PUT /api/siswa/{id}", authMiddleware(roleMW(handleUpdateSiswa, "tu", "kepala_sekolah")))
-	api.Handle("DELETE /api/siswa/{id}", authMiddleware(roleMW(handleDeleteSiswa, "tu", "kepala_sekolah")))
+	api.Handle("POST /api/siswa", authMiddleware(writeGuard(roleMW(handleCreateSiswa, "tu", "kepala_sekolah"))))
+	api.Handle("PUT /api/siswa/{id}", authMiddleware(writeGuard(roleMW(handleUpdateSiswa, "tu", "kepala_sekolah"))))
+	api.Handle("DELETE /api/siswa/{id}", authMiddleware(writeGuard(roleMW(handleDeleteSiswa, "tu", "kepala_sekolah"))))
 
 	// Absensi siswa
 	api.Handle("GET /api/absensi-siswa", authMiddleware(http.HandlerFunc(handleListAbsensiSiswa)))
-	api.Handle("POST /api/absensi-siswa", authMiddleware(roleMW(handleUpsertAbsensiSiswa, "guru", "tu", "kepala_sekolah")))
+	api.Handle("POST /api/absensi-siswa", authMiddleware(writeGuard(roleMW(handleUpsertAbsensiSiswa, "guru", "tu", "kepala_sekolah"))))
 
 	// Absensi guru
 	api.Handle("GET /api/absensi-guru", authMiddleware(http.HandlerFunc(handleListAbsensiGuru)))
-	api.Handle("POST /api/absensi-guru/masuk", authMiddleware(roleMW(handleAbsenMasuk, "guru", "tu", "kepala_sekolah")))
-	api.Handle("POST /api/absensi-guru/pulang", authMiddleware(roleMW(handleAbsenPulang, "guru", "tu", "kepala_sekolah")))
+	api.Handle("POST /api/absensi-guru/masuk", authMiddleware(writeGuard(roleMW(handleAbsenMasuk, "guru", "tu", "kepala_sekolah"))))
+	api.Handle("POST /api/absensi-guru/pulang", authMiddleware(writeGuard(roleMW(handleAbsenPulang, "guru", "tu", "kepala_sekolah"))))
 
 	// Nilai
 	api.Handle("GET /api/nilai", authMiddleware(http.HandlerFunc(handleListNilai)))
-	api.Handle("POST /api/nilai", authMiddleware(roleMW(handleUpsertNilai, "guru", "kepala_sekolah")))
-	api.Handle("DELETE /api/nilai/{id}", authMiddleware(roleMW(handleDeleteNilai, "guru", "kepala_sekolah")))
+	api.Handle("POST /api/nilai", authMiddleware(writeGuard(roleMW(handleUpsertNilai, "guru", "kepala_sekolah"))))
+	api.Handle("DELETE /api/nilai/{id}", authMiddleware(writeGuard(roleMW(handleDeleteNilai, "guru", "kepala_sekolah"))))
 
 	// Hafalan
 	api.Handle("GET /api/hafalan", authMiddleware(http.HandlerFunc(handleListHafalan)))
-	api.Handle("POST /api/hafalan", authMiddleware(roleMW(handleCreateHafalan, "guru", "kepala_sekolah")))
-	api.Handle("DELETE /api/hafalan/{id}", authMiddleware(roleMW(handleDeleteHafalan, "guru", "kepala_sekolah")))
+	api.Handle("POST /api/hafalan", authMiddleware(writeGuard(roleMW(handleCreateHafalan, "guru", "kepala_sekolah"))))
+	api.Handle("DELETE /api/hafalan/{id}", authMiddleware(writeGuard(roleMW(handleDeleteHafalan, "guru", "kepala_sekolah"))))
 
 	// SPP
 	api.Handle("GET /api/spp", authMiddleware(http.HandlerFunc(handleListSPP)))
-	api.Handle("POST /api/spp/generate", authMiddleware(roleMW(handleGenerateSPP, "tu", "kepala_sekolah")))
-	api.Handle("POST /api/spp/{id}/bayar", authMiddleware(roleMW(handleBayarSPP, "tu", "kepala_sekolah")))
+	api.Handle("POST /api/spp/generate", authMiddleware(writeGuard(roleMW(handleGenerateSPP, "tu", "kepala_sekolah"))))
+	api.Handle("POST /api/spp/{id}/bayar", authMiddleware(writeGuard(roleMW(handleBayarSPP, "tu", "kepala_sekolah"))))
 
 	// Keuangan
 	api.Handle("GET /api/keuangan/ringkasan", authMiddleware(http.HandlerFunc(handleRingkasanKeuangan)))
 	api.Handle("GET /api/pengeluaran", authMiddleware(http.HandlerFunc(handleListPengeluaran)))
-	api.Handle("POST /api/pengeluaran", authMiddleware(roleMW(handleCreatePengeluaran, "tu", "kepala_sekolah")))
-	api.Handle("DELETE /api/pengeluaran/{id}", authMiddleware(roleMW(handleDeletePengeluaran, "tu", "kepala_sekolah")))
+	api.Handle("POST /api/pengeluaran", authMiddleware(writeGuard(roleMW(handleCreatePengeluaran, "tu", "kepala_sekolah"))))
+	api.Handle("DELETE /api/pengeluaran/{id}", authMiddleware(writeGuard(roleMW(handleDeletePengeluaran, "tu", "kepala_sekolah"))))
 
 	// Agenda & jadwal
 	api.Handle("GET /api/agenda", authMiddleware(http.HandlerFunc(handleListAgenda)))
-	api.Handle("POST /api/agenda", authMiddleware(roleMW(handleCreateAgenda, "kepala_sekolah", "tu", "guru")))
-	api.Handle("DELETE /api/agenda/{id}", authMiddleware(roleMW(handleDeleteAgenda, "kepala_sekolah", "tu")))
-	api.Handle("PUT /api/agenda/{id}", authMiddleware(roleMW(handleUpdateAgenda, "kepala_sekolah", "tu", "guru")))
+	api.Handle("POST /api/agenda", authMiddleware(writeGuard(roleMW(handleCreateAgenda, "kepala_sekolah", "tu", "guru"))))
+	api.Handle("DELETE /api/agenda/{id}", authMiddleware(writeGuard(roleMW(handleDeleteAgenda, "kepala_sekolah", "tu"))))
+	api.Handle("PUT /api/agenda/{id}", authMiddleware(writeGuard(roleMW(handleUpdateAgenda, "kepala_sekolah", "tu", "guru"))))
 	api.Handle("GET /api/jadwal", authMiddleware(http.HandlerFunc(handleListJadwal)))
-	api.Handle("POST /api/jadwal", authMiddleware(roleMW(handleCreateJadwal, "tu", "kepala_sekolah")))
-	api.Handle("DELETE /api/jadwal/{id}", authMiddleware(roleMW(handleDeleteJadwal, "tu", "kepala_sekolah")))
-	api.Handle("PUT /api/jadwal/{id}", authMiddleware(roleMW(handleUpdateJadwal, "tu", "kepala_sekolah")))
+	api.Handle("POST /api/jadwal", authMiddleware(writeGuard(roleMW(handleCreateJadwal, "tu", "kepala_sekolah"))))
+	api.Handle("DELETE /api/jadwal/{id}", authMiddleware(writeGuard(roleMW(handleDeleteJadwal, "tu", "kepala_sekolah"))))
+	api.Handle("PUT /api/jadwal/{id}", authMiddleware(writeGuard(roleMW(handleUpdateJadwal, "tu", "kepala_sekolah"))))
 
 	// Dashboard
 	api.Handle("GET /api/dashboard", authMiddleware(http.HandlerFunc(handleDashboard)))
 
 	// Ekspor & rapor
-	api.Handle("GET /api/export/absensi", authMiddleware(planMW("export", handleExportAbsensi)))
-	api.Handle("GET /api/export/spp", authMiddleware(planMW("export", handleExportSPP)))
-	api.Handle("GET /api/export/nilai", authMiddleware(planMW("export", handleExportNilai)))
-	api.Handle("GET /api/export/keuangan", authMiddleware(planMW("export", handleExportKeuangan)))
-	api.Handle("GET /api/export/rekap", authMiddleware(roleMWAuth(planMW("export", planMWClaimsExport(handleExportRekap)), "kepala_sekolah", "tu")))
+	api.Handle("GET /api/export/absensi", authMiddleware(http.HandlerFunc(handleExportAbsensi)))
+	api.Handle("GET /api/export/spp", authMiddleware(http.HandlerFunc(handleExportSPP)))
+	api.Handle("GET /api/export/nilai", authMiddleware(http.HandlerFunc(handleExportNilai)))
+	api.Handle("GET /api/export/keuangan", authMiddleware(http.HandlerFunc(handleExportKeuangan)))
+	api.Handle("GET /api/export/hafalan", authMiddleware(http.HandlerFunc(handleExportHafalan)))
+	api.Handle("GET /api/export/siswa", authMiddleware(http.HandlerFunc(handleExportSiswa)))
+	api.Handle("GET /api/export/rekap", authMiddleware(roleMWAuth(planMWClaimsExport(handleExportRekap), "kepala_sekolah", "tu")))
+	api.Handle("GET /api/export/all", authMiddleware(http.HandlerFunc(handleExportAll)))
 	api.Handle("GET /api/rapor/{id}", authMiddleware(http.HandlerFunc(handleRaporData)))
 	api.Handle("GET /api/rapor-cetak/{id}", http.HandlerFunc(handleCetakRapor))
 	api.Handle("GET /api/kwitansi/{id}", http.HandlerFunc(handleKwitansi))
 	api.Handle("GET /api/wali", authMiddleware(authedHandler(handleListWali)))
-	api.Handle("POST /api/wali", authMiddleware(roleMW(handleSetWali, "kepala_sekolah", "tu")))
+	api.Handle("POST /api/wali", authMiddleware(writeGuard(roleMW(handleSetWali, "kepala_sekolah", "tu"))))
 	api.Handle("GET /api/rekap", authMiddleware(roleMWAuth(planMWClaims("rekap", handleRekapBulanan), "kepala_sekolah", "tu")))
 	api.Handle("GET /api/siswa-by-kelas", authMiddleware(http.HandlerFunc(handleSiswaByKelas)))
-	api.Handle("POST /api/nilai-bulk", authMiddleware(roleMW(handleBulkNilai, "guru", "kepala_sekolah")))
+	api.Handle("POST /api/nilai-bulk", authMiddleware(writeGuard(roleMW(handleBulkNilai, "guru", "kepala_sekolah"))))
 
 	// Langganan & notifikasi
 	api.Handle("GET /api/langganan", authMiddleware(http.HandlerFunc(handleLangganan)))
@@ -93,30 +96,30 @@ func registerRoutes(mux *http.ServeMux) {
 
 	// Pengaturan sekolah
 	api.Handle("GET /api/pengaturan", authMiddleware(http.HandlerFunc(handleGetPengaturan)))
-	api.Handle("PUT /api/pengaturan", authMiddleware(roleMW(handleUpdatePengaturan, "kepala_sekolah", "tu")))
+	api.Handle("PUT /api/pengaturan", authMiddleware(writeGuard(roleMW(handleUpdatePengaturan, "kepala_sekolah", "tu"))))
 
 	// Reset password (kepala sekolah)
-	api.Handle("POST /api/users/{id}/reset-password", authMiddleware(roleMW(handleResetPassword, "kepala_sekolah")))
+	api.Handle("POST /api/users/{id}/reset-password", authMiddleware(writeGuard(roleMW(handleResetPassword, "kepala_sekolah"))))
 
 	// Ubah password sendiri
-	api.Handle("POST /api/ubah-password", authMiddleware(roleMW(handleUbahPassword, "kepala_sekolah", "guru", "tu")))
+	api.Handle("POST /api/ubah-password", authMiddleware(writeGuard(roleMW(handleUbahPassword, "kepala_sekolah", "guru", "tu"))))
 
 	// Log aktivitas (kepala sekolah)
 	api.Handle("GET /api/activity-log", authMiddleware(http.HandlerFunc(handleListLog)))
 
 	// Catatan rapor (wali kelas/guru/kepala)
 	api.Handle("GET /api/rapor-catatan/{id}", authMiddleware(http.HandlerFunc(handleGetCatatanRapor)))
-	api.Handle("PUT /api/rapor-catatan/{id}", authMiddleware(roleMW(handleSaveCatatanRapor, "guru", "kepala_sekolah")))
+	api.Handle("PUT /api/rapor-catatan/{id}", authMiddleware(writeGuard(roleMW(handleSaveCatatanRapor, "guru", "kepala_sekolah"))))
 
 	// User management (kepala sekolah)
-	api.Handle("GET /api/users", authMiddleware(roleMW(handleListUsers, "kepala_sekolah", "platform")))
-	api.Handle("POST /api/users", authMiddleware(roleMW(handleCreateUser, "kepala_sekolah")))
-	api.Handle("DELETE /api/users/{id}", authMiddleware(roleMW(handleDeleteUser, "kepala_sekolah")))
+	api.Handle("GET /api/users", authMiddleware(writeGuard(roleMW(handleListUsers, "kepala_sekolah", "platform"))))
+	api.Handle("POST /api/users", authMiddleware(writeGuard(roleMW(handleCreateUser, "kepala_sekolah"))))
+	api.Handle("DELETE /api/users/{id}", authMiddleware(writeGuard(roleMW(handleDeleteUser, "kepala_sekolah"))))
 
 	// Panel admin platform (role khusus owner)
-	api.Handle("GET /api/admin/sekolah", authMiddleware(roleMW(handleAdminSekolah, "platform")))
-	api.Handle("POST /api/admin/set-plan", authMiddleware(roleMW(handleAdminSetPlan, "platform")))
-	api.Handle("GET /api/admin/stats", authMiddleware(roleMW(handleAdminStats, "platform")))
+	api.Handle("GET /api/admin/sekolah", authMiddleware(writeGuard(roleMW(handleAdminSekolah, "platform"))))
+	api.Handle("POST /api/admin/set-plan", authMiddleware(writeGuard(roleMW(handleAdminSetPlan, "platform"))))
+	api.Handle("GET /api/admin/stats", authMiddleware(writeGuard(roleMW(handleAdminStats, "platform"))))
 
 	mux.Handle("/api/", api)
 }
@@ -147,6 +150,17 @@ func authedHandler(h func(http.ResponseWriter, *http.Request, *Claims)) http.Han
 			return
 		}
 		h(w, r, c)
+	})
+}
+
+// writeGuard: tolak input baru saat mode baca (langganan habis) — data tetap bisa dilihat & diunduh
+func writeGuard(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if c := userFromContext(r); c != nil && readMode(c.SekolahID) {
+			jsonErr(w, 402, "Langganan sedang tidak aktif, jadi sementara hanya bisa melihat dan mengunduh data. Data Anda aman dan bisa diunduh kapan saja di menu Pengaturan.")
+			return
+		}
+		next.ServeHTTP(w, r)
 	})
 }
 

@@ -38,6 +38,9 @@ func makeToken(u *User) (string, error) {
 func authMiddleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		h := r.Header.Get("Authorization")
+		if h == "" && r.URL.Query().Get("token") != "" {
+			h = "Bearer " + r.URL.Query().Get("token") // unduhan langsung via link (ZIP/CSV)
+		}
 		if !strings.HasPrefix(h, "Bearer ") {
 			jsonErr(w, 401, "Token tidak ada")
 			return

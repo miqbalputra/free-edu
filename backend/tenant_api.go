@@ -136,7 +136,28 @@ func cekLangganan(sekolahID int) (bool, string) {
 	if status == "trial" && time.Now().After(trialSampai) {
 		return false, "Masa trial 14 hari sudah berakhir. Upgrade ke paket Sekolah untuk melanjutkan."
 	}
+	// langganan habis (bukan suspend): TIDAK mengunci data — mode baca + unduh tetap bebas (anti-sandera)
 	return true, ""
+}
+
+// readMode: true jika langganan habis (akses baca + unduh saja, input ditolak dengan pesan lembut)
+func readMode(sekolahID int) bool {
+	var status string
+	var trialSampai time.Time
+	err := db.QueryRow(`SELECT status, trial_sampai FROM sekolah WHERE id=$1`, sekolahID).Scan(&status, &trialSampai)
+	if err != nil {
+		return false
+	}
+	if status == "suspend" {
+		return true
+	}
+	if status == "trial" && time.Now().After(trialSampai) {
+		return true
+	}
+	if status == "kadarluarsa" {
+		return true
+	}
+	return false
 }
 
 // ---------- ONBOARDING: daftar sekolah baru ----------

@@ -586,6 +586,11 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           <div><label>Semester Aktif</label><select v-model="set.semester_aktif"><option value="ganjil">Ganjil</option><option value="genap">Genap</option></select></div>
         </div>
         <div style="margin-top:16px"><button class="btn" @click="saveSet">💾 Simpan Pengaturan</button></div>
+        <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--line)">
+          <b>📦 Data Anda Milik Anda</b>
+          <p style="font-size:13px;opacity:.75;margin:6px 0 10px">Unduh seluruh data sekolah (siswa, nilai, hafalan, absensi, SPP, keuangan) dalam satu file ZIP yang bisa dibuka dengan Excel. Data bisa diunduh kapan saja, kapan pun, apa pun status langganan Anda.</p>
+          <a class="btn sec" :href="'/api/export/all?token='+token" download>⬇️ Unduh Semua Data (ZIP)</a>
+        </div>
       </div>
 
       <!-- AKUN SAYA -->

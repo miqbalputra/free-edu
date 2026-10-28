@@ -443,3 +443,39 @@ func handleSiswaByKelas(w http.ResponseWriter, r *http.Request) {
 	}
 	respond(w, 200, list)
 }
+
+// handleExportSiswa: CSV daftar siswa (anti-sandera — bebas semua plan)
+func handleExportSiswa(w http.ResponseWriter, r *http.Request) {
+	rows, err := db.Query(`SELECT nis, nama, jk, kelas, COALESCE(nama_ortu,''), COALESCE(hp_ortu,''), status
+		FROM siswa WHERE sekolah_id=$1 ORDER BY kelas, nama`, userFromContext(r).SekolahID)
+	if err != nil {
+		jsonErr(w, 500, userErr(err))
+		return
+	}
+	defer rows.Close()
+	data := [][]string{}
+	for rows.Next() {
+		var nis, nama, jk, kelas, ortu, hp, st string
+		rows.Scan(&nis, &nama, &jk, &kelas, &ortu, &hp, &st)
+		data = append(data, []string{nis, nama, jk, kelas, ortu, hp, st})
+	}
+	csvResponse(w, "siswa.csv", []string{"NIS", "Nama", "JK", "Kelas", "Nama Ortu", "HP Ortu", "Status"}, data)
+}
+
+// handleExportHafalan: CSV riwayat hafalan (anti-sandera — bebas semua plan)
+func handleExportHafalan(w http.ResponseWriter, r *http.Request) {
+	rows, err := db.Query(`SELECT s.nis, s.nama, s.kelas, h.surah, COALESCE(h.ayat_dari::text,''), COALESCE(h.ayat_sampai::text,''), h.status, COALESCE(h.catatan,''), h.tanggal::text
+		FROM hafalan h JOIN siswa s ON s.id=h.siswa_id WHERE s.sekolah_id=$1 ORDER BY h.tanggal DESC`, userFromContext(r).SekolahID)
+	if err != nil {
+		jsonErr(w, 500, userErr(err))
+		return
+	}
+	defer rows.Close()
+	data := [][]string{}
+	for rows.Next() {
+		var nis, nama, kelas, surah, ad, as2, st, ket, tgl string
+		rows.Scan(&nis, &nama, &kelas, &surah, &ad, &as2, &st, &ket, &tgl)
+		data = append(data, []string{nis, nama, kelas, surah, ad, as2, st, ket, tgl})
+	}
+	csvResponse(w, "hafalan.csv", []string{"NIS", "Nama", "Kelas", "Surah", "Ayat Dari", "Ayat Sampai", "Status", "Catatan", "Tanggal"}, data)
+}
