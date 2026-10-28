@@ -81,7 +81,7 @@ func handleAdminStats(w http.ResponseWriter, r *http.Request, c *Claims) {
 	db.QueryRow(`SELECT COUNT(*) FROM siswa WHERE status='aktif'`).Scan(&nSiswa)
 	db.QueryRow(`SELECT COUNT(*) FROM users`).Scan(&nUser)
 	var mrr float64
-	db.QueryRow(`SELECT COALESCE(SUM(CASE l.paket WHEN 'sekolah' THEN 75000 WHEN 'yayasan' THEN 200000 ELSE 0 END),0)
+	db.QueryRow(`SELECT COALESCE(SUM(CASE l.paket WHEN 'sekolah' THEN 45000 WHEN 'yayasan' THEN 200000 ELSE 0 END),0)
 		FROM langganan l WHERE l.status='aktif'`).Scan(&mrr)
 	respond(w, 200, map[string]interface{}{
 		"sekolah": nSekolah, "trial": nAktif, "siswa": nSiswa, "pengguna": nUser, "mrr": mrr,

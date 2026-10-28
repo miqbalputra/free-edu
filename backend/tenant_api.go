@@ -38,7 +38,7 @@ func limitsFor(paket string) planLimits {
 	case "yayasan":
 		return planLimits{MaxSiswa: 0, MaxUser: 0, Export: true, Rekap: true} // 0 = unlimited
 	case "sekolah":
-		return planLimits{MaxSiswa: 500, MaxUser: 20, Export: true, Rekap: true}
+		return planLimits{MaxSiswa: 150, MaxUser: 20, Export: true, Rekap: true}
 	default:
 		return planLimits{MaxSiswa: 30, MaxUser: 3, Export: false, Rekap: false}
 	}

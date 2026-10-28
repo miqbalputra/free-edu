@@ -79,7 +79,7 @@ func seedDataDemo(sekolahID, adminID int) {
 	for i, id := range ids {
 		var sid int
 		err := db.QueryRow(`INSERT INTO spp (siswa_id,bulan,tahun,jumlah,status,jatuh_tempo,sekolah_id)
-			VALUES ($1,$2,$3,75000,'belum',make_date(`+thn+`,12,10),$4) RETURNING id`,
+			VALUES ($1,$2,$3,45000,'belum',make_date(`+thn+`,12,10),$4) RETURNING id`,
 			id, bulanIni, thn, sekolahID).Scan(&sid)
 		if err == nil && i < 2 {
 			db.Exec(`UPDATE spp SET status='lunas', tgl_bayar=CURRENT_DATE, metode='tunai', petugas_id=$1 WHERE id=$2`, adminID, sid)

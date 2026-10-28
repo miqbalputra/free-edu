@@ -127,7 +127,7 @@ func migrate() error {
 		)`,
 		`CREATE TABLE IF NOT EXISTS spp_setting (
 			id SERIAL PRIMARY KEY CHECK (id = 1),
-			jumlah_default NUMERIC(12,2) DEFAULT 75000
+			jumlah_default NUMERIC(12,2) DEFAULT 45000
 		)`,
 		`INSERT INTO spp_setting (id) VALUES (1) ON CONFLICT DO NOTHING`,
 		`CREATE TABLE IF NOT EXISTS pengaturan (

@@ -647,7 +647,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
               <li>Siswa, nilai, absensi, hafalan, jadwal</li>
               <li>SPP + kwitansi + WA tagihan</li>
               <li>Rapor cetak</li>
-              <li style="color:var(--muted)">🔒 Ekspor Excel</li>
+              <li>✅ Unduh semua data kapan saja (ZIP/Excel)</li>
               <li style="color:var(--muted)">🔒 Laporan rekap bulanan</li>
             </ul>
           </div>
@@ -655,10 +655,10 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
             <span style="position:absolute;top:-11px;left:50%;transform:translateX(-50%);background:var(--primary);color:#fff;font-size:10.5px;padding:3px 12px;border-radius:99px">PALING LARIS</span>
             <b style="font-size:17px">🏫 Sekolah</b>
             <small style="color:var(--muted);margin:6px 0 12px">Untuk sekolah/TPQ yang berkembang</small>
-            <b style="font-size:24px;color:var(--primary)">Rp75rb</b>
-            <small style="margin:10px 0;color:var(--muted)">/bulan</small>
+            <b style="font-size:24px;color:var(--primary)">Rp45rb</b>
+            <small style="margin:10px 0;color:var(--muted)">/bulan · setahun = bayar 10 bulan (hemat 2 bulan)</small>
             <ul style="font-size:12.5px;line-height:1.9;padding-left:18px;margin:0">
-              <li>Maks <b>500 siswa</b> aktif</li>
+              <li>Maks <b>150 santri</b> aktif</li>
               <li>Maks <b>20 pengguna</b></li>
               <li>Semua fitur Gratis, plus:</li>
               <li>✅ Ekspor Excel (nilai, SPP, absensi, kas)</li>
@@ -671,7 +671,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
             <b style="font-size:17px">🕌 Yayasan</b>
             <small style="color:var(--muted);margin:6px 0 12px">Multi-lembaga & cabang</small>
             <b style="font-size:24px;color:var(--primary)">Rp200rb</b>
-            <small style="margin:10px 0;color:var(--muted)">/bulan</small>
+            <small style="margin:10px 0;color:var(--muted)">/bulan · setahun = bayar 10 bulan</small>
             <ul style="font-size:12.5px;line-height:1.9;padding-left:18px;margin:0">
               <li><b>Tanpa batas</b> siswa & pengguna</li>
               <li>Semua fitur Sekolah, plus:</li>
@@ -683,6 +683,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           </div>
         </div>
         <p style="text-align:center;color:var(--muted);font-size:12.5px;margin-top:18px">
+          🔐 Data Anda selalu bisa diunduh kapan saja — apa pun paket Anda, apa pun status langganan. Tidak pernah jadi sandera.<br>
           Pembayaran & aktivasi manual via WhatsApp — konfirmasi admin, aktif kurang dari 1 jam.<br>
           Butuh demo dulu? <a :href="waUpgrade" target="_blank">Chat kami</a> — kami bantu setup gratis.
         </p>
@@ -824,7 +825,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           <div><label>Bulan *</label><select v-model="formSPP.bulan"><option v-for="b in bulanList" :value="b">{{ b }}</option></select></div>
           <div><label>Tahun *</label><input v-model="formSPP.tahun" placeholder="2026"></div>
         </div>
-        <label>Jumlah per Siswa (Rp, kosongkan = default Rp75.000)</label>
+        <label>Jumlah per Siswa (Rp, kosongkan = default Rp45.000)</label>
         <input type="number" v-model.number="formSPP.jumlah">
         <div style="margin-top:18px;display:flex;gap:10px">
           <button class="btn" @click="generateSPP">Generate</button>
