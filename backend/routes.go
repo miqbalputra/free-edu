@@ -599,7 +599,7 @@ func handleCreateHafalan(w http.ResponseWriter, r *http.Request, c *Claims) {
 
 func handleListSPP(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
-	base := `SELECT sp.id, s.nama, s.kelas, sp.bulan, sp.tahun, sp.jumlah, COALESCE(sp.status,'belum'), COALESCE(sp.tgl_bayar::text,''), COALESCE(sp.metode,'')
+	base := `SELECT sp.id, s.nama, s.kelas, sp.bulan, sp.tahun, sp.jumlah, COALESCE(sp.status,'belum'), COALESCE(sp.tgl_bayar::text,''), COALESCE(sp.metode,''), COALESCE(s.hp_ortu,'')
 		FROM spp sp JOIN siswa s ON s.id=sp.siswa_id WHERE s.sekolah_id=` + itoa(userFromContext(r).SekolahID)
 	args := []interface{}{}
 	i := 1
@@ -625,10 +625,10 @@ func handleListSPP(w http.ResponseWriter, r *http.Request) {
 	list := []map[string]interface{}{}
 	for rows.Next() {
 		var id int
-		var nama, kelas, bulan, tahun, status, tgl, metode string
+		var nama, kelas, bulan, tahun, status, tgl, metode, hp string
 		var jumlah float64
-		rows.Scan(&id, &nama, &kelas, &bulan, &tahun, &jumlah, &status, &tgl, &metode)
-		list = append(list, map[string]interface{}{"id": id, "siswa": nama, "kelas": kelas, "bulan": bulan, "tahun": tahun, "jumlah": jumlah, "status": status, "tgl_bayar": tgl, "metode": metode})
+		rows.Scan(&id, &nama, &kelas, &bulan, &tahun, &jumlah, &status, &tgl, &metode, &hp)
+		list = append(list, map[string]interface{}{"id": id, "siswa": nama, "kelas": kelas, "bulan": bulan, "tahun": tahun, "jumlah": jumlah, "status": status, "tgl_bayar": tgl, "metode": metode, "hp": hp})
 	}
 	resp := map[string]interface{}{"data": list}
 	for k, v := range pageMeta(r, total) {
