@@ -193,6 +193,12 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
         <div class="frow">
           <div><label>Email *</label><input v-model="daftar.email"></div>
           <div><label>Password * (min 6)</label><input type="password" v-model="daftar.password"></div>
+          <div style="grid-column:1/-1">
+            <label style="display:flex;gap:8px;align-items:center;font-weight:400;cursor:pointer">
+              <input type="checkbox" v-model="daftar.isi_demo" :true-value="true" :false-value="false" style="width:auto">
+              <span>Isi <b>data contoh</b> dulu (6 siswa, nilai, tagihan) biar langsung kelihatan cara pakainya — bisa dihapus kapan saja.</span>
+            </label>
+          </div>
         </div>
       </template>
       <template v-else>
@@ -943,7 +949,7 @@ createApp({
     const bulk = ref({ kelas:'', mapel:'', jenis:'tugas', semester:'ganjil', items:[] });
     const set = ref({}); const logs = ref([]); const pw = ref({lama:'',baru:''});
     const raporCatatan = ref({catatan_wali:'',ekstrakurikuler:'',prestasi:''});
-    const mode = ref('login'); const daftar = ref({});
+    const mode = ref('login'); const daftar = ref({isi_demo:true});
     const langganan = ref({status:'aktif',trial_sisa_hari:0}); const modalWA = ref(false); const waList = ref([]);
     const siswaData = ref([]); const siswaPage = ref(1); const siswaPages = ref(1);
     let siswaTimer = null;

@@ -148,7 +148,9 @@ func handleDaftar(w http.ResponseWriter, r *http.Request) {
 		NamaAdmin   string `json:"nama_admin"`
 		Email       string `json:"email"`
 		Password    string `json:"password"`
+		IsiDemo     *bool  `json:"isi_demo"`
 	}
+	isiDemo := in.IsiDemo == nil || *in.IsiDemo // default: aktif
 	json.NewDecoder(r.Body).Decode(&in)
 	in.Subdomain = strings.ToLower(strings.TrimSpace(in.Subdomain))
 	if in.NamaSekolah == "" || in.Subdomain == "" || in.NamaAdmin == "" || in.Email == "" || len(in.Password) < 6 {
@@ -186,6 +188,9 @@ func handleDaftar(w http.ResponseWriter, r *http.Request) {
 	db.QueryRow(`INSERT INTO users (nama,email,password,role,sekolah_id) VALUES ($1,$2,$3,'kepala_sekolah',$4) RETURNING id`,
 		in.NamaAdmin, strings.ToLower(in.Email), string(hash), sid).Scan(&uid)
 	logActivity(uid, "daftar_sekolah", "Sekolah baru: "+in.NamaSekolah+" (subdomain: "+in.Subdomain+")")
+	if isiDemo {
+		seedDataDemo(sid, uid)
+	}
 	respond(w, 201, map[string]interface{}{
 		"ok": "1", "sekolah_id": sid,
 		"pesan": "Pendaftaran berhasil! Trial 14 hari aktif. Login di halaman masuk.",
