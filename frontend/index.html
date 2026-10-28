@@ -193,6 +193,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
         <div class="frow">
           <div><label>Email *</label><input v-model="daftar.email"></div>
           <div><label>Password * (min 6)</label><input type="password" v-model="daftar.password"></div>
+          <div style="grid-column:1/-1"><label>Kode Rujukan (opsional — dari teman sejawat; mereka dapat 1 bulan gratis)</label><input v-model="daftar.kode_ref" placeholder="mis. REF1b94e" style="text-transform:uppercase"></div>
           <div style="grid-column:1/-1">
             <label style="display:flex;gap:8px;align-items:center;font-weight:400;cursor:pointer">
               <input type="checkbox" v-model="daftar.isi_demo" :true-value="true" :false-value="false" style="width:auto">
@@ -663,6 +664,12 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           Pembayaran & aktivasi manual via WhatsApp — konfirmasi admin, aktif kurang dari 1 jam.<br>
           Butuh demo dulu? <a :href="waUpgrade" target="_blank">Chat kami</a> — kami bantu setup gratis.
         </p>
+        <div v-if="kodeRef" style="max-width:520px;margin:20px auto 0;background:var(--chip,#eef0ff);border:1px solid var(--line);border-radius:14px;padding:16px 18px;text-align:center">
+          <b>🎁 Ajak Teman Sejawat, Dapat 1 Bulan Gratis</b>
+          <p style="font-size:13px;margin:6px 0 10px;opacity:.8">Bagikan kode ini ke pengelola lembaga lain. Kalau mereka daftar pakai kode ini, sekolah Anda langsung dapat <b>1 bulan paket Sekolah gratis</b>.</p>
+          <div style="font-size:22px;font-weight:800;letter-spacing:2px;color:var(--primary)">{{ kodeRef }}</div>
+          <button class="btn sec sm" style="margin-top:10px" @click="salinRef">📋 Salin Kode</button>
+        </div>
       </div>
 
       <!-- PANEL ADMIN PLATFORM -->
@@ -958,6 +965,8 @@ createApp({
     const raporCatatan = ref({catatan_wali:'',ekstrakurikuler:'',prestasi:''});
     const mode = ref('login'); const daftar = ref({isi_demo:true});
     const langganan = ref({status:'aktif',trial_sisa_hari:0}); const modalWA = ref(false); const waList = ref([]);
+    const kodeRef = ref('');
+    async function salinRef(){ try { await navigator.clipboard.writeText(kodeRef.value); showToast('Kode rujukan disalin ✅'); } catch(e){ showToast('Kode: '+kodeRef.value); } }
     const siswaData = ref([]); const siswaPage = ref(1); const siswaPages = ref(1);
     let siswaTimer = null;
 
@@ -1240,11 +1249,17 @@ createApp({
         showToast('Wali kelas disimpan ✅'); loadWali(); }
       catch(e){ showToast(e.message,true); }
     }
-    watch(page, (p)=>{ if(p) load(p); if(p==='rekap') loadRekap(); if(p==='wali') loadWali(); if(p==='admin') loadAdmin(); });
+    watch(page, (p)=>{ if(p) load(p); if(p==='rekap') loadRekap(); if(p==='wali') loadWali(); if(p==='admin') loadAdmin();
+      if(p==='upgrade') api('/api/kode-ref').then(k=>{ kodeRef.value=k.kode_ref||''; }).catch(()=>{}); });
 
-    onMounted(() => { if (token.value) { load('dashboard'); api('/api/pengaturan').then(p=>{ set.value=p; raporTA.value=p.tahun_ajaran_aktif||'2026/2027'; }).catch(()=>{}); } });
+    onMounted(() => { if (token.value) { load('dashboard'); api('/api/pengaturan').then(p=>{ set.value=p; raporTA.value=p.tahun_ajaran_aktif||'2026/2027'; }).catch(()=>{}); }
+      // Demo instan via ?demo=1 dari landing — masuk sebagai kepala sekolah demo
+      if (!token.value && new URLSearchParams(location.search).get('demo')) {
+        login.email='kepala@simaka.id'; login.password='kepala123';
+        doLogin();
+      } });
     return { API, token, user, page, loading, toast, toastErr, login, dash, siswa, nilai, hafalan, jadwal, spp, pengeluaran, agenda, pengumuman, users, watch, ref, computed,
-      absSiswa, absGuru, keu, absTanggal, absKelas, absGTanggal, qSiswa, filterKelas, filterKelasN, filterMapel, filterKelasJ, sppBulan, sppStatus,
+      kodeRef, salinRef, langganan, absSiswa, absGuru, keu, absTanggal, absKelas, absGTanggal, qSiswa, filterKelas, filterKelasN, filterMapel, filterKelasJ, sppBulan, sppStatus,
       pengUraian, pengKategori, pengJumlah, modalSiswa, modalNilai, modalHafalan, modalSPP, modalAgenda, modalPengumuman, modalJadwal, modalUser,
       formSiswa, formNilai, formHafalan, formSPP, formAgenda, formPengumuman, formJadwal, formUser, rapor, raporSiswa, raporTA, modalBulk, bulk,
       set, logs, pw, raporCatatan, siswaData, siswaPage, siswaPages, rekap, rekapBulan, waliList, waliKelas, waliUser, waliCandidates,

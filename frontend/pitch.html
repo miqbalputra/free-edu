@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SIMAKA — Materi Pitch 1 Halaman</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  body{font-family:'Segoe UI',system-ui,sans-serif;color:#1e1b4b;background:#fff;line-height:1.55}
+  .page{max-width:800px;margin:0 auto;padding:36px 40px}
+  header{display:flex;justify-content:space-between;align-items:center;border-bottom:3px solid #4f46e5;padding-bottom:14px;margin-bottom:20px}
+  h1{font-size:26px;color:#4f46e5}
+  header small{color:#6b7280;font-size:12.5px}
+  .lead{font-size:15px;margin-bottom:18px}
+  .lead b{color:#4f46e5}
+  h2{font-size:15px;margin:16px 0 8px;color:#4f46e5;text-transform:uppercase;letter-spacing:.5px}
+  .masalah{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+  .masalah div{background:#fef2f2;border-left:4px solid #dc2626;border-radius:8px;padding:10px 12px;font-size:13.5px}
+  .solusi{background:#eef2ff;border-left:4px solid #4f46e5;border-radius:8px;padding:12px 14px;font-size:14px;margin-bottom:6px}
+  .fitur{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:6px}
+  .fitur div{border:1px solid #e5e7eb;border-radius:10px;padding:10px;font-size:12.5px}
+  .fitur b{display:block;font-size:13.5px;margin-bottom:3px}
+  table{width:100%;border-collapse:collapse;margin:6px 0;font-size:13.5px}
+  th,td{border:1px solid #e5e7eb;padding:8px 10px;text-align:left}
+  th{background:#eef2ff;color:#3730a3}
+  .harga b{color:#4f46e5}
+  .cta{margin-top:18px;background:#1e1b4b;color:#fff;border-radius:14px;padding:18px 20px;display:flex;justify-content:space-between;align-items:center;gap:14px}
+  .cta h3{font-size:17px;margin-bottom:4px}
+  .cta p{font-size:13px;opacity:.85}
+  .cta .wa{background:#22c55e;color:#fff;text-decoration:none;font-weight:700;border-radius:10px;padding:10px 16px;white-space:nowrap;font-size:14px}
+  @media print{ .cta{-webkit-print-color-adjust:exact;print-color-adjust:exact} body{-webkit-print-color-adjust:exact} }
+  @media(max-width:640px){ .masalah,.fitur{grid-template-columns:1fr} .page{padding:20px} }
+</style>
+</head>
+<body>
+<div class="page">
+  <header>
+    <h1>🎓 SIMAKA</h1>
+    <small>Sistem Admin Tahfidz &amp; TPQ All-in-One · sistemflow.com</small>
+  </header>
+
+  <p class="lead">Sistem untuk <b>Kepala Sekolah, Guru, dan Tata Usaha</b> — absensi santri, hafalan, nilai &amp; rapor, tagihan SPP, dan laporan siap cetak. Semua dari HP, tanpa install.</p>
+
+  <h2>Yang selama ini terjadi</h2>
+  <div class="masalah">
+    <div>📝 Hafalan santri tercatat di buku tulis — lama-kelamaan hilang/robek</div>
+    <div>💰 Tagihan SPP diperiksa satu-satu — sering ada yang bocor tidak tertagih</div>
+    <div>🧾 Orang tua bertanya "anak saya sudah hafal apa?" — jawabannya harus cari buku dulu</div>
+    <div>📊 Laporan untuk yayasan disusun manual berjam-jam setiap semester</div>
+  </div>
+
+  <h2>Cara SIMAKA menjawabnya</h2>
+  <div class="solusi"><b>Satu aplikasi untuk semuanya.</b> Absen santri 2 klik. Catat hafalan saat setoran. Tagihan SPP dibuat sekali untuk semua santri. Laporan rapor &amp; rekap bulanan siap cetak berkop sekolah. Dan yang terpenting: <b>seluruh data milik sekolah bisa diunduh kapan saja</b> — tidak pernah jadi sandera.</div>
+
+  <h2>Fitur utama</h2>
+  <div class="fitur">
+    <div><b>✅ Absensi 2 Klik</b>Satu layar per kelas: Hadir, Sakit, Izin, Alpa. Rekap bulanan siap ekspor.</div>
+    <div><b>📖 Hafalan Terpantau</b>Setoran surah &amp; ayat, status lancar/murojaah, riwayat lengkap per santri.</div>
+    <div><b>📝 Nilai &amp; Rapor</b>Input nilai massal per kelas. Rapor resmi berkop sekolah, cetak atau PDF.</div>
+    <div><b>💰 SPP &amp; Buku Kas</b>Tagihan bulanan sekali klik, kwitansi digital berkop, kas masuk-keluar rapi.</div>
+    <div><b>💬 Pesan WA Orang Tua</b>Tagihan belum lunas jadi pesan WA siap kirim — nama, bulan, nominal tertulis rapi.</div>
+    <div><b>📊 Laporan Rekap</b>SPP, kas, absensi, nilai, hafalan — satu halaman siap cetak untuk yayasan/orang tua.</div>
+  </div>
+
+  <h2>Harga</h2>
+  <table class="harga">
+    <tr><th>Paket</th><th>Untuk</th><th>Harga</th></tr>
+    <tr><td><b>Gratis</b></td><td>≤30 santri — absensi, hafalan, SPP, nilai + unduh data bebas</td><td><b>Rp0</b> selamanya</td></tr>
+    <tr><td><b>Sekolah</b></td><td>≤150 santri — semua fitur + laporan rekap + kwitansi berkop</td><td><b>Rp45.000/bulan</b> (setahun = bayar 10 bulan)</td></tr>
+    <tr><td><b>Yayasan</b></td><td>Multi-cabang — beberapa lembaga satu akun, laporan gabungan</td><td><b>Rp200.000/bulan</b></td></tr>
+  </table>
+
+  <div class="cta">
+    <div>
+      <h3>Lihat langsung, tanpa daftar.</h3>
+      <p>Bapak/Ibu bisa mencoba demo dari HP saya sekarang — atau dari HP Bapak/Ibu: <b style="color:#a5b4fc">sistemflow.com → ▶️ Lihat Demo</b></p>
+    </div>
+    <a class="wa" href="https://wa.me/6281234567890?text=Assalamualaikum%2C%20saya%20tertarik%20coba%20SIMAKA%20untuk%20lembaga%20kami">💬 Chat WhatsApp</a>
+  </div>
+</div>
+</body>
+</html>

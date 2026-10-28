@@ -170,9 +170,10 @@ func handleDaftar(w http.ResponseWriter, r *http.Request) {
 		Email       string `json:"email"`
 		Password    string `json:"password"`
 		IsiDemo     *bool  `json:"isi_demo"`
+		KodeRef     string `json:"kode_ref"`
 	}
-	isiDemo := in.IsiDemo == nil || *in.IsiDemo // default: aktif
 	json.NewDecoder(r.Body).Decode(&in)
+	isiDemo := in.IsiDemo == nil || *in.IsiDemo // default: aktif (dihitung SETELAH decode)
 	in.Subdomain = strings.ToLower(strings.TrimSpace(in.Subdomain))
 	if in.NamaSekolah == "" || in.Subdomain == "" || in.NamaAdmin == "" || in.Email == "" || len(in.Password) < 6 {
 		jsonErr(w, 400, "Semua field wajib (password min 6 karakter)")
@@ -196,10 +197,34 @@ func handleDaftar(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var sid int
-	err := db.QueryRow(`INSERT INTO sekolah (subdomain, nama, status) VALUES ($1,$2,'trial') RETURNING id`, in.Subdomain, in.NamaSekolah).Scan(&sid)
+	kodeRef := "REF" + itoa(int(time.Now().UnixNano()%100000)) + strings.ToLower(strings.Split(in.Subdomain, "")[0])
+	err := db.QueryRow(`INSERT INTO sekolah (subdomain, nama, status, kode_ref, dirujuk_oleh) VALUES ($1,$2,'trial',$3,NULLIF($4,'')) RETURNING id`,
+		in.Subdomain, in.NamaSekolah, kodeRef, strings.TrimSpace(in.KodeRef)).Scan(&sid)
+	if err != nil {
+		// fallback tanpa kolom rujukan (instalasi lama)
+		err = db.QueryRow(`INSERT INTO sekolah (subdomain, nama, status) VALUES ($1,$2,'trial') RETURNING id`, in.Subdomain, in.NamaSekolah).Scan(&sid)
+	}
 	if err != nil {
 		jsonErr(w, 500, userErr(err))
 		return
+	}
+	// Program rujukan: pendaftar via kode → perujuk dapat 1 bulan gratis (plan Sekolah)
+	if ref := strings.TrimSpace(in.KodeRef); ref != "" {
+		var refID int
+		if db.QueryRow(`SELECT id FROM sekolah WHERE kode_ref=$1 AND id<>$2`, ref, sid).Scan(&refID) == nil {
+			var paket, status string
+			if db.QueryRow(`SELECT paket, status FROM langganan WHERE sekolah_id=$1 ORDER BY id DESC LIMIT 1`, refID).Scan(&paket, &status) == nil && paket != "yayasan" {
+				// perpanjang/masukkan 1 bulan gratis
+				var sampai time.Time
+				e := db.QueryRow(`SELECT COALESCE(sampai, now()) FROM langganan WHERE sekolah_id=$1 ORDER BY id DESC LIMIT 1`, refID).Scan(&sampai)
+				base := time.Now()
+				if e == nil && sampai.After(base) {
+					base = sampai
+				}
+				db.Exec(`INSERT INTO langganan (sekolah_id, paket, status, sampai, catatan) VALUES ($1,'sekolah','aktif',$2,'Bonus rujukan 1 bulan')`, refID, base.AddDate(0, 1, 0))
+				logActivity(0, "rujukan", "Sekolah ID "+itoa(refID)+" dapat bonus 1 bulan dari rujukan "+ref)
+			}
+		}
 	}
 	db.Exec(`INSERT INTO langganan (sekolah_id, paket, status, catatan) VALUES ($1,'gratis','aktif','Trial 14 hari')`, sid)
 	// pengaturan per sekolah (kop kwitansi, tahun ajaran, dsb.)

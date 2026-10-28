@@ -81,6 +81,7 @@ func registerRoutes(mux *http.ServeMux) {
 	api.Handle("GET /api/export/siswa", authMiddleware(http.HandlerFunc(handleExportSiswa)))
 	api.Handle("GET /api/export/rekap", authMiddleware(roleMWAuth(planMWClaimsExport(handleExportRekap), "kepala_sekolah", "tu")))
 	api.Handle("GET /api/export/all", authMiddleware(http.HandlerFunc(handleExportAll)))
+	api.Handle("GET /api/kode-ref", authMiddleware(http.HandlerFunc(handleKodeRefSaya)))
 	api.Handle("GET /api/rapor/{id}", authMiddleware(http.HandlerFunc(handleRaporData)))
 	api.Handle("GET /api/rapor-cetak/{id}", http.HandlerFunc(handleCetakRapor))
 	api.Handle("GET /api/kwitansi/{id}", http.HandlerFunc(handleKwitansi))
@@ -153,6 +154,18 @@ func authedHandler(h func(http.ResponseWriter, *http.Request, *Claims)) http.Han
 	})
 }
 
+// handleKodeRefSaya: kode rujukan sekolah user (untuk halaman Paket)
+func handleKodeRefSaya(w http.ResponseWriter, r *http.Request) {
+	c := userFromContext(r)
+	if c == nil {
+		jsonErr(w, 401, "Unauthorized")
+		return
+	}
+	var kode string
+	db.QueryRow(`SELECT COALESCE(kode_ref,'') FROM sekolah WHERE id=$1`, c.SekolahID).Scan(&kode)
+	respond(w, 200, map[string]string{"kode_ref": kode})
+}
+
 // writeGuard: tolak input baru saat mode baca (langganan habis) — data tetap bisa dilihat & diunduh
 func writeGuard(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -212,11 +225,18 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// Cek langganan sekolah
+	// ANTI-SANDERA: langganan habis TIDAK memblokir login — user masih bisa
+	// melihat & mengunduh datanya (input baru ditolak per-endpoint oleh writeGuard).
 	// Users dengan role 'platform' tidak terikat sekolah — cekLangganan dilewati
 	if u.Role != "platform" {
 		if ok, msg := cekLangganan(u.SekolahID); !ok {
-			jsonErr(w, 402, msg)
-			return
+			// suspend = satu-satunya blokir penuh (pelanggaran)
+			if strings.Contains(msg, "ditangguhkan") {
+				jsonErr(w, 402, msg)
+				return
+			}
+			// trial habis / langganan lewat: login tetap boleh (mode baca)
+			_ = msg
 		}
 	}
 	loginRecordSuccess(key)
