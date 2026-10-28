@@ -162,11 +162,32 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
   .toolbar{flex-wrap:wrap}
   table{display:block;overflow-x:auto;-webkit-overflow-scrolling:touch;white-space:nowrap}
 }
+.wa-float{position:fixed;bottom:18px;right:18px;z-index:60;background:#22c55e;color:#fff;border-radius:999px;padding:12px 18px;font-weight:700;text-decoration:none;box-shadow:0 6px 20px rgba(34,197,94,.4);display:flex;align-items:center;gap:6px;font-size:14px}
+@media(max-width:900px){ .wa-float{bottom:auto;top:14px;right:14px;padding:10px 14px} .wa-float span{display:none} }
+.tour-bg{position:fixed;inset:0;background:rgba(15,17,23,.55);z-index:80;display:flex;align-items:center;justify-content:center;padding:20px}
+.tour-card{background:var(--card,#fff);border-radius:18px;padding:26px 28px;max-width:400px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.tour-card h3{margin-bottom:8px;color:var(--primary,#4f46e5)}
+.tour-card p{font-size:14px;opacity:.85}
+.tour-n{font-size:11.5px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--primary,#4f46e5);opacity:.7;margin-bottom:6px}
 </style>
 </head>
 <body>
 <div id="app">
   <!-- LOGIN -->
+  <div v-if="token && tour" class="tour-bg" @click.self="tour=null">
+      <div class="tour-card">
+        <div class="tour-n">Langkah {{tour}} dari 4</div>
+        <template v-if="tour===1"><h3>🎓 Selamat datang di SIMAKA!</h3><p>Ini dashboard sekolah Anda. Semua menu ada di sidebar kiri (atau di bawah kalau pakai HP).</p></template>
+        <template v-else-if="tour===2"><h3>👨‍🎓 Mulai dari data siswa</h3><p>Buka menu "Siswa" lalu tekan "+ Tambah Siswa". Isi nama dan kelas — cukup itu dulu.</p></template>
+        <template v-else-if="tour===3"><h3>✅ Absen &amp; catat hafalan tiap hari</h3><p>Menu "Absensi" untuk kehadiran, menu "Hafalan" untuk setoran surah. Cuma 2-3 ketukan.</p></template>
+        <template v-else><h3>💰 Tagihan &amp; laporan otomatis</h3><p>Menu "SPP" membuat tagihan sekaligus, dan "Laporan Rekap" menyusun laporan bulanan siap cetak. Selamat mencoba! 🎉</p></template>
+        <div style="margin-top:16px;display:flex;gap:10px">
+          <button class="btn" @click="tour = tour>=4 ? null : tour+1">{{ tour>=4 ? 'Mulai Pakai ✅' : 'Lanjut →' }}</button>
+          <button class="btn sec" @click="tour=null">Lewati</button>
+        </div>
+      </div>
+    </div>
+    <a v-if="token" href="https://wa.me/6281234567890?text=Assalamualaikum%2C%20saya%20butuh%20bantuan%20SIMAKA" target="_blank" class="wa-float" title="Butuh bantuan? Chat kami via WhatsApp">💬 <span>Bantuan</span></a>
   <div v-if="!token" class="login-wrap">
   <div class="login-card">
     <div class="login-hero">
@@ -423,6 +444,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
       <div v-if="page==='hafalan'" class="panel">
         <div class="toolbar">
           <button v-if="user.role!=='tu'" class="btn" @click="modalHafalan=true">+ Catat Setoran Hafalan</button>
+          <span style="font-size:12px;opacity:.65">Tips: ketuk tombol <b>⚡ Hafal</b> di baris siswa untuk mencatat lebih cepat.</span>
         </div>
         <table v-if="hafalan.length">
           <tr><th>Siswa</th><th>Surah</th><th>Ayat</th><th>Status</th><th>Tanggal</th><th>Catatan</th><th></th></tr>
@@ -966,6 +988,9 @@ createApp({
     const mode = ref('login'); const daftar = ref({isi_demo:true});
     const langganan = ref({status:'aktif',trial_sisa_hari:0}); const modalWA = ref(false); const waList = ref([]);
     const kodeRef = ref('');
+    const tour = ref(localStorage.getItem('simaka_tour') ? null : 1);
+    watch(tour,(t)=>{ if(t===null) localStorage.setItem('simaka_tour','1'); });
+    function quickHafalan(s){ formHafalan.value = { siswa_id: s.id, surah:'', status:'baru', ayat_dari:null, ayat_sampai:null, catatan:'' }; modalHafalan.value=true; }
     async function salinRef(){ try { await navigator.clipboard.writeText(kodeRef.value); showToast('Kode rujukan disalin ✅'); } catch(e){ showToast('Kode: '+kodeRef.value); } }
     const siswaData = ref([]); const siswaPage = ref(1); const siswaPages = ref(1);
     let siswaTimer = null;
@@ -1259,7 +1284,7 @@ createApp({
         doLogin();
       } });
     return { API, token, user, page, loading, toast, toastErr, login, dash, siswa, nilai, hafalan, jadwal, spp, pengeluaran, agenda, pengumuman, users, watch, ref, computed,
-      kodeRef, salinRef, langganan, absSiswa, absGuru, keu, absTanggal, absKelas, absGTanggal, qSiswa, filterKelas, filterKelasN, filterMapel, filterKelasJ, sppBulan, sppStatus,
+      kodeRef, salinRef, tour, quickHafalan, langganan, absSiswa, absGuru, keu, absTanggal, absKelas, absGTanggal, qSiswa, filterKelas, filterKelasN, filterMapel, filterKelasJ, sppBulan, sppStatus,
       pengUraian, pengKategori, pengJumlah, modalSiswa, modalNilai, modalHafalan, modalSPP, modalAgenda, modalPengumuman, modalJadwal, modalUser,
       formSiswa, formNilai, formHafalan, formSPP, formAgenda, formPengumuman, formJadwal, formUser, rapor, raporSiswa, raporTA, modalBulk, bulk,
       set, logs, pw, raporCatatan, siswaData, siswaPage, siswaPages, rekap, rekapBulan, waliList, waliKelas, waliUser, waliCandidates,
