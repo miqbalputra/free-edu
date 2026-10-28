@@ -352,6 +352,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
             <option value="2024/2025">2024/2025</option>
           </select>
           <button class="btn" @click="openRapor" :disabled="!raporSiswa">Lihat Rapor</button>
+          <button class="btn" style="background:#25d366" @click="kirimLaporanWA" :disabled="!raporSiswa" title="Kirim laporan hafalan & absensi ke WhatsApp orang tua">💬 Kirim ke Orang Tua</button>
         </div>
         <div v-if="rapor" >
           <div class="stats">
@@ -497,7 +498,8 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
             <td><span class="badge" :class="t.status==='lunas'?'b-lunas':'b-belum'">{{ t.status }}</span></td><td>{{ t.tgl_bayar || '-' }}</td>
             <td><button v-if="t.status!=='lunas'" class="btn sm" @click="bayarSPP(t)">Tandai Lunas</button>
               <a v-if="t.status!=='lunas' && t.hp" class="btn sm" style="background:#25d366;text-decoration:none" :href="waTagihan(t)" target="_blank" title="Ingatkan via WhatsApp">💬 WA</a>
-              <a v-if="t.status==='lunas'" class="btn sm sec" :href="API+'/kwitansi/'+t.id" target="_blank">🧾 Kwitansi</a></td></tr>
+              <a v-if="t.status==='lunas'" class="btn sm sec" :href="API+'/kwitansi/'+t.id" target="_blank">🧾 Kwitansi</a>
+              <a v-if="t.status==='lunas' && t.hp" class="btn sm" style="background:#25d366;text-decoration:none" :href="waKwitansi(t)" target="_blank" title="Kirim kwitansi via WhatsApp">💬</a></td></tr>
         </table>
         <div v-else class="empty">Belum ada tagihan SPP.<br><small>Tekan "⚡ Generate SPP" untuk membuat tagihan bulanan sekaligus.</small></div>
       </div>
@@ -1139,6 +1141,19 @@ createApp({
       } catch(e){ showToast(e.message, true); }
     }
     function cetakRapor(){ window.open('/api/rapor-cetak/'+raporSiswa.value+'?tahun_ajaran='+encodeURIComponent(raporTA.value)+'&token='+encodeURIComponent(token.value), '_blank'); }
+    function waNorm2(x){ x=(x||'').replace(/[^0-9]/g,''); if(x.startsWith('0')) x='62'+x.slice(1); return x; }
+    function kirimLaporanWA(){
+      const sw = siswa.find(s=>s.id===Number(raporSiswa.value));
+      if(!sw || !sw.hp_ortu){ showToast('Nomor HP orang tua belum tercatat di data siswa ini.', true); return; }
+      const link = location.origin + '/api/laporan-wali/' + raporSiswa.value + '?token=' + encodeURIComponent(token.value);
+      const msg = 'Assalamualaikum Bapak/Ibu, berikut laporan perkembangan ' + sw.nama + ' (' + (sw.kelas||'') + ') di ' + (set.value.nama_sekolah||'sekolah') + ':\n' + link + '\nTautan ini hanya untuk Bapak/Ibu, tidak perlu install aplikasi.';
+      window.open('https://wa.me/' + waNorm2(sw.hp_ortu) + '?text=' + encodeURIComponent(msg), '_blank');
+    }
+    function waKwitansi(t){
+      const link = location.origin + '/api/kwitansi/' + t.id + '?token=' + encodeURIComponent(token.value);
+      const msg = 'Assalamualaikum, kwitansi pembayaran SPP ' + t.siswa + ' bulan ' + t.bulan + ' ' + t.tahun + ' (' + rp(t.jumlah) + ') sudah kami terima. Berikut kwitansinya: ' + link;
+      window.open('https://wa.me/' + waNorm2(t.hp) + '?text=' + encodeURIComponent(msg), '_blank');
+    }
     function exportCSV(jenis){
       const base = {absensi:'/api/export/absensi?bulan=', spp:'/api/export/spp', nilai:'/api/export/nilai', keuangan:'/api/export/keuangan'}[jenis];
       let url = base;
@@ -1285,7 +1300,7 @@ createApp({
         doLogin();
       } });
     return { API, token, user, page, loading, toast, toastErr, login, dash, siswa, nilai, hafalan, jadwal, spp, pengeluaran, agenda, pengumuman, users, watch, ref, computed,
-      kodeRef, salinRef, tour, quickHafalan, langganan, absSiswa, absGuru, keu, absTanggal, absKelas, absGTanggal, qSiswa, filterKelas, filterKelasN, filterMapel, filterKelasJ, sppBulan, sppStatus,
+      kodeRef, salinRef, tour, quickHafalan, kirimLaporanWA, waKwitansi, langganan, absSiswa, absGuru, keu, absTanggal, absKelas, absGTanggal, qSiswa, filterKelas, filterKelasN, filterMapel, filterKelasJ, sppBulan, sppStatus,
       pengUraian, pengKategori, pengJumlah, modalSiswa, modalNilai, modalHafalan, modalSPP, modalAgenda, modalPengumuman, modalJadwal, modalUser,
       formSiswa, formNilai, formHafalan, formSPP, formAgenda, formPengumuman, formJadwal, formUser, rapor, raporSiswa, raporTA, modalBulk, bulk,
       set, logs, pw, raporCatatan, siswaData, siswaPage, siswaPages, rekap, rekapBulan, waliList, waliKelas, waliUser, waliCandidates,
