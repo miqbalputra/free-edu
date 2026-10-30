@@ -29,6 +29,7 @@ func main() {
 		log.Fatal("DB not reachable: ", err)
 	}
 	sec, err := loadOrCreateSecret()
+	initEkskulSchema()
 	if err != nil {
 		log.Fatal("jwt secret: ", err)
 	}

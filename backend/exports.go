@@ -222,7 +222,7 @@ func handleRaporData(w http.ResponseWriter, r *http.Request) {
 		"siswa": map[string]interface{}{"nama": nama, "nis": nis, "kelas": kelas, "nama_ortu": ortu, "hp_ortu": hp},
 		"tahun_ajaran": ta, "nilai": list, "rata_rata": rataRata,
 		"absensi": map[string]int{"hadir": hadir, "sakit": sakit, "izin": izin, "alpa": alpa},
-		"hafalan": hafalan, "spp_lunas": sppLunas, "spp_belum": sppBelum,
+		"hafalan": hafalan, "ekskul": raporEkskulList(sid), "spp_lunas": sppLunas, "spp_belum": sppBelum,
 	})
 }
 
@@ -256,7 +256,7 @@ func handleCetakRapor(w http.ResponseWriter, r *http.Request) {
 	db.QueryRow(`SELECT nama, COALESCE(nis,''), kelas, COALESCE(nama_ortu,'') FROM siswa WHERE id=$1`, sid).Scan(&nama, &nis, &kelas, &ortu)
 	var namaSekolah, alamatSekolah, kepalaSekolah string
 	db.QueryRow(`SELECT nama_sekolah, COALESCE(alamat,''), COALESCE(kepala_sekolah,'') FROM pengaturan WHERE id=$1`, c.SekolahID).Scan(&namaSekolah, &alamatSekolah, &kepalaSekolah)
-	cw, ek, pr := getCatatan(sid, ta)
+	cw, _, _ := getCatatan(sid, ta)
 	rows, err := db.Query(`SELECT mapel, jenis, AVG(nilai) FROM nilai WHERE siswa_id=$1 AND tahun_ajaran=$2 GROUP BY mapel, jenis`, sid, ta)
 	if err != nil {
 		jsonErr(w, 500, userErr(err))
@@ -333,6 +333,19 @@ func handleCetakRapor(w http.ResponseWriter, r *http.Request) {
 	db.QueryRow(`SELECT COUNT(*) FILTER (WHERE status='hadir'), COUNT(*) FILTER (WHERE status='sakit'),
 		COUNT(*) FILTER (WHERE status='izin'), COUNT(*) FILTER (WHERE status='alpa')
 		FROM absensi_siswa WHERE siswa_id=$1`, sid).Scan(&hadir, &sakit, &izin, &alpa)
+	// Ekskul rows untuk cetak
+	var eb strings.Builder
+	for _, e := range raporEkskulList(sid) {
+		nama, _ := e["nama"].(string)
+		nilai, _ := e["nilai"].(string)
+		if nilai == "" {
+			nilai = "-"
+		}
+		fmt.Fprintf(&eb, `<tr><td width="50%%">%s</td><td>%s</td></tr>`, html.EscapeString(nama), html.EscapeString(nilai))
+	}
+	if eb.Len() == 0 {
+		eb.WriteString(`<tr><td colspan="2">-</td></tr>`)
+	}
 
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	fmt.Fprintf(w, `<!DOCTYPE html><html lang="id"><head><meta charset="utf-8"><title>Rapor %s</title>
@@ -363,7 +376,9 @@ th,td{border:1px solid #333;padding:6px 8px;text-align:left} th{background:#e8f5
 <h3 style="font-size:14px">B. Kehadiran</h3>
 <table><tr><th>Hadir</th><th>Sakit</th><th>Izin</th><th>Alpa</th></tr>
 <tr><td>%d hari</td><td>%d hari</td><td>%d hari</td><td>%d hari</td></tr></table>
-<h3 style="font-size:14px">C. Catatan Wali Kelas &amp; Ekstrakurikuler</h3>
+<h3 style="font-size:14px">C. Ekstrakurikuler</h3>
+<table>%s</table>
+<h3 style="font-size:14px">D. Catatan Wali Kelas</h3>
 <table>
 <tr><td width="30%%">Ekstrakurikuler</td><td>%s</td></tr>
 <tr><td>Prestasi</td><td>%s</td></tr>
@@ -379,7 +394,8 @@ th,td{border:1px solid #333;padding:6px 8px;text-align:left} th{background:#e8f5
 		html.EscapeString(kelas), html.EscapeString(ortu), b.String(),
 		strconv.FormatFloat(rata, 'f', 1, 64), predikat, ket,
 		hadir, sakit, izin, alpa,
-		html.EscapeString(ek), html.EscapeString(pr), html.EscapeString(cw),
+		eb.String(),
+		html.EscapeString(cw),
 		html.EscapeString(ortu), html.EscapeString(kepalaSekolah))
 }
 

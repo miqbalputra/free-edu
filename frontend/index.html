@@ -265,6 +265,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
         <button :class="{active:page==='rapor'}" @click="page='rapor'">📄 Rapor</button>
         <button v-if="menuQuran" :class="{active:page==='hafalan'}" @click="page='hafalan'">📖 Hafalan</button>
         <button :class="{active:page==='jadwal'}" @click="page='jadwal'">🗓️ Jadwal</button>
+        <button :class="{active:page==='ekskul'}" @click="page='ekskul'">⭐ Ekstrakurikuler</button>
         <div class="sec">Kepegawaian &amp; Keuangan</div>
         <button v-if="user.role!=='guru'" :class="{active:page==='absensi-guru'}" @click="page='absensi-guru'">🧑‍🏫 Absensi Guru</button>
         <button :class="{active:page==='spp'}" @click="page='spp'">💰 SPP</button>
@@ -463,6 +464,23 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
       </div>
 
       <!-- JADWAL -->
+      <div v-if="page==='ekskul'" class="panel">
+        <div class="panel-head" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <h3 style="margin:0">⭐ Ekstrakurikuler</h3>
+          <div style="display:flex;gap:8px">
+            <button v-if="user.role!=='guru'" class="btn" @click="tambahEkskul">+ Ekskul Baru</button>
+            <button v-if="user.role!=='guru'" class="btn sec" @click="openNaikKelas">🎓 Kenaikan Kelas / Kelulusan</button>
+          </div>
+        </div>
+        <div v-if="!ekskulList.length" class="empty">Belum ada ekskul.<br><small>Klik "+ Ekskul Baru" untuk menambah (mis. Pramuka, Futsal).</small></div>
+        <table v-if="ekskulList.length">
+          <tr><th>Ekskul</th><th>Pembina</th><th>Anggota</th><th></th></tr>
+          <tr v-for="e in ekskulList"><td><b>{{ e.nama }}</b></td><td>{{ e.pembina || '-' }}</td><td>{{ e.jumlah }}</td>
+            <td><button class="btn sm" @click="bukaAnggota(e)">Nilai Anggota</button>
+                <button v-if="user.role!=='guru'" class="btn warn sm" @click="hapusEkskul(e)">Hapus</button></td></tr>
+        </table>
+      </div>
+
       <div v-if="page==='jadwal'" class="panel">
         <div class="toolbar">
           <select v-model="filterKelasJ"><option value="">Semua Kelas</option><option v-for="k in kelasList" :value="k">{{ k }}</option></select>
@@ -865,6 +883,47 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
       </div>
     </div>
 
+    <div v-if="modalEkskul" class="modal-bg" @click.self="modalEkskul=false">
+      <div class="modal" style="max-width:420px">
+        <h3>⭐ Ekskul Baru</h3>
+        <label>Nama Ekskul *</label><input v-model="formEkskul.nama" placeholder="mis. Pramuka">
+        <div style="margin-top:12px;display:flex;gap:10px">
+          <button class="btn" @click="saveEkskul">Simpan</button>
+          <button class="btn sec" @click="modalEkskul=false">Batal</button>
+        </div>
+      </div>
+    </div>
+    <div v-if="modalAnggota" class="modal-bg" @click.self="modalAnggota=false">
+      <div class="modal" style="max-width:640px">
+        <h3>🏅 Nilai Anggota — {{ ekskulAktif.nama }}</h3>
+        <div class="frow" style="margin-bottom:10px">
+          <div><label>Tambah Siswa</label><select v-model="anggotaBaru.siswa_id"><option value="">— pilih siswa —</option><option v-for="s in siswa" :value="s.id">{{ s.nama }} ({{ s.kelas }})</option></select></div>
+          <div><label>Penilaian</label><select v-model="anggotaBaru.nilai"><option>Sangat Baik</option><option>Baik</option><option>Cukup</option><option>Perlu Bimbingan</option></select></div>
+        </div>
+        <button class="btn sm" @click="addAnggota" :disabled="!anggotaBaru.siswa_id">+ Tambah &amp; Simpan</button>
+        <table v-if="anggotaList.length" style="margin-top:12px">
+          <tr><th>Nama</th><th>Kelas</th><th>Penilaian</th></tr>
+          <tr v-for="a in anggotaList"><td>{{ a.nama }}</td><td>{{ a.kelas }}</td>
+            <td><select :value="a.nilai" @change="updateNilaiEkskul(a, $event.target.value)"><option>Sangat Baik</option><option>Baik</option><option>Cukup</option><option>Perlu Bimbingan</option><option value="">-</option></select></td></tr>
+        </table>
+        <div style="margin-top:12px"><button class="btn sec" @click="modalAnggota=false">Tutup</button></div>
+      </div>
+    </div>
+    <div v-if="modalNaikKelas" class="modal-bg" @click.self="modalNaikKelas=false">
+      <div class="modal" style="max-width:440px">
+        <h3>🎓 Akhir Tahun Ajaran</h3>
+        <p style="font-size:13px;opacity:.75">Naikkan semua siswa aktif dari satu tingkat ke tingkat berikutnya, atau luluskan kelas akhir. Pastikan data nilai semester sudah beres.</p>
+        <div class="frow">
+          <div><label>Naikkan Tingkat</label><select v-model="naik.dari"><option value="">dari…</option><option v-for="t in tingkatList" :value="t">{{ t }}</option></select> → <select v-model="naik.ke"><option value="">ke…</option><option v-for="t in tingkatList" :value="t">{{ t }}</option></select></div>
+        </div>
+        <button class="btn" @click="doNaikKelas" :disabled="!naik.dari || !naik.ke">↗ Naikkan Sekarang</button>
+        <div class="frow" style="margin-top:14px">
+          <div><label>Luluskan Tingkat Akhir</label><select v-model="naik.lulus"><option value="">tingkat…</option><option v-for="t in tingkatList" :value="t">{{ t }}</option></select></div>
+        </div>
+        <button class="btn warn" @click="doLuluskan" :disabled="!naik.lulus">🎓 Luluskan Sekarang</button>
+        <div style="margin-top:12px"><button class="btn sec" @click="modalNaikKelas=false">Tutup</button></div>
+      </div>
+    </div>
     <div v-if="modalHafalan" class="modal-bg" @click.self="modalHafalan=false">
       <div class="modal">
         <h3>Catat Setoran Hafalan</h3>
@@ -1056,6 +1115,18 @@ createApp({
     const set = ref({}); const logs = ref([]); const pw = ref({lama:'',baru:''});
     const raporCatatan = ref({catatan_wali:'',ekstrakurikuler:'',prestasi:''});
     const mode = ref('login'); const daftar = ref({isi_demo:true, jenis:'umum', jenjang:'SD'});
+    const ekskulList = ref([]); const modalEkskul = ref(false); const formEkskul = ref({});
+    const modalAnggota = ref(false); const ekskulAktif = ref({}); const anggotaList = ref([]); const anggotaBaru = ref({siswa_id:'', nilai:'Baik'});
+    const modalNaikKelas = ref(false); const naik = ref({dari:'',ke:'',lulus:''});
+    function tambahEkskul(){ formEkskul.value={nama:''}; modalEkskul.value=true; }
+    async function saveEkskul(){ try{ await api('/api/ekskul',{method:'POST',body:JSON.stringify(formEkskul.value)}); modalEkskul.value=false; showToast('Ekskul tersimpan ✅'); load('ekskul'); }catch(e){ showToast(e.message,true); } }
+    async function hapusEkskul(e){ if(!confirm('Hapus ekskul '+e.nama+'?'))return; try{ await api('/api/ekskul/'+e.id,{method:'DELETE'}); showToast('Ekskul dihapus'); load('ekskul'); }catch(err){ showToast(err.message,true); } }
+    async function bukaAnggota(e){ ekskulAktif.value=e; modalAnggota.value=true; if(!siswa.value.length){ siswa.value = await api('/api/siswa'); } anggotaList.value = await api('/api/ekskul/'+e.id+'/anggota'); }
+    async function addAnggota(){ try{ await api('/api/ekskul/'+ekskulAktif.value.id+'/anggota',{method:'POST',body:JSON.stringify(anggotaBaru.value)}); anggotaList.value = await api('/api/ekskul/'+ekskulAktif.value.id+'/anggota'); anggotaBaru.value={siswa_id:'',nilai:'Baik'}; showToast('Tersimpan ✅'); }catch(e){ showToast(e.message,true); } }
+    async function updateNilaiEkskul(a, v){ try{ await api('/api/ekskul/'+ekskulAktif.value.id+'/anggota',{method:'POST',body:JSON.stringify({siswa_id:a.siswa_id,nilai:v,catatan:a.catatan||''})}); a.nilai=v; showToast('Penilaian diperbarui ✅'); }catch(e){ showToast(e.message,true); } }
+    function openNaikKelas(){ naik.value={dari:'',ke:'',lulus:''}; modalNaikKelas.value=true; }
+    async function doNaikKelas(){ if(!confirm('Naikkan semua siswa tingkat '+naik.value.dari+' ke '+naik.value.ke+'?'))return; try{ const r=await api('/api/naik-kelas',{method:'POST',body:JSON.stringify({dari:naik.value.dari,ke:naik.value.ke})}); showToast(r.ok+' ('+r.jumlah+' siswa) 🎉'); modalNaikKelas.value=false; }catch(e){ showToast(e.message,true); } }
+    async function doLuluskan(){ if(!confirm('Luluskan semua siswa tingkat '+naik.value.lulus+'? Status mereka jadi LULUS dan keluar dari daftar aktif.'))return; try{ const r=await api('/api/luluskan',{method:'POST',body:JSON.stringify({tingkat:naik.value.lulus})}); showToast(r.ok+' ('+r.jumlah+' siswa) 🎓'); modalNaikKelas.value=false; }catch(e){ showToast(e.message,true); } }
     const langganan = ref({status:'aktif',trial_sisa_hari:0}); const modalWA = ref(false); const waList = ref([]);
     const kodeRef = ref('');
     const importOpen = ref(false); const importStep = ref('pilih'); const importErr = ref('');
@@ -1197,6 +1268,7 @@ createApp({
         if (p==='absensi') absSiswa.value = await api('/api/absensi-siswa?tanggal='+absTanggal.value+(absKelas.value?'&kelas='+absKelas.value:''));
         if (p==='nilai') { const q=new URLSearchParams(); if(filterKelasN.value)q.set('kelas',filterKelasN.value); if(filterMapel.value)q.set('mapel',filterMapel.value); nilai.value = await api('/api/nilai?'+q); }
         if (p==='hafalan') hafalan.value = await api('/api/hafalan');
+        if (p==='ekskul') ekskulList.value = await api('/api/ekskul');
         if (p==='jadwal') jadwal.value = await api('/api/jadwal'+(filterKelasJ.value?'?kelas='+filterKelasJ.value:''));
         if (p==='absensi-guru') absGuru.value = await api('/api/absensi-guru?tanggal='+absGTanggal.value);
         if (p==='spp') { const q=new URLSearchParams(); if(sppBulan.value)q.set('bulan',sppBulan.value); if(sppStatus.value)q.set('status',sppStatus.value); spp.value = await api('/api/spp?'+q); }
@@ -1434,7 +1506,7 @@ createApp({
         login.email='kepala@simaka.id'; login.password='kepala123';
         doLogin();
       } });
-    return { API, token, user, menuQuran, tingkatList, page, loading, toast, toastErr, login, dash, siswa, nilai, hafalan, jadwal, spp, pengeluaran, agenda, pengumuman, users, watch, ref, computed,
+    return { API, token, user, menuQuran, tingkatList, page, ekskulList, modalEkskul, formEkskul, tambahEkskul, saveEkskul, hapusEkskul, bukaAnggota, modalAnggota, ekskulAktif, anggotaList, anggotaBaru, addAnggota, updateNilaiEkskul, modalNaikKelas, naik, openNaikKelas, doNaikKelas, doLuluskan, loading, toast, toastErr, login, dash, siswa, nilai, hafalan, jadwal, spp, pengeluaran, agenda, pengumuman, users, watch, ref, computed,
       kodeRef, salinRef, tour, quickHafalan, kirimLaporanWA, resetWaliToken, waKwitansi, langganan, absSiswa, absGuru, keu, absTanggal, absKelas, absGTanggal, qSiswa, filterKelas, filterKelasN, filterMapel, filterKelasJ, sppBulan, sppStatus,
       pengUraian, pengKategori, pengJumlah, modalSiswa, modalNilai, modalHafalan, modalSPP, modalAgenda, modalPengumuman, modalJadwal, modalUser,
       formSiswa, formNilai, formHafalan, formSPP, formAgenda, formPengumuman, formJadwal, formUser, rapor, raporSiswa, raporTA, modalBulk, bulk,
