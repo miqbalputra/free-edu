@@ -1,8 +1,8 @@
 <div align="center">
 
-# 🎓 SIMAKA
+# 🎓 SchoolVia
 
-**Sistem Informasi Manajemen Sekolah Tahfidz & TPQ — All-in-One, Multi-Sekolah SaaS**
+**SchoolVia — Sistem Admin Sekolah All-in-One (SD, SMP, SMA/sederajat & lembaga Islam) · Multi-Sekolah SaaS**
 
 [![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat-square&logo=go&logoColor=white)](https://go.dev)
 [![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D?style=flat-square&logo=vue.js&logoColor=white)](https://vuejs.org)
@@ -19,16 +19,16 @@
 
 ---
 
-## 📌 Tentang SIMAKA
+## 📌 Tentang SchoolVia
 
-SIMAKA adalah aplikasi admin untuk **lembaga tahfidz & TPQ di Indonesia** — dibangun dari keluhan nyata: hafalan santri tercatat di buku tulis yang lama-lama hilang, tagihan SPP bocor karena diperiksa manual, dan orang tua harus bertanya satu-satu soal perkembangan anaknya.
+SchoolVia adalah aplikasi admin untuk **lembaga tahfidz & TPQ di Indonesia** — dibangun dari keluhan nyata: hafalan santri tercatat di buku tulis yang lama-lama hilang, tagihan SPP bocor karena diperiksa manual, dan orang tua harus bertanya satu-satu soal perkembangan anaknya.
 
 > **Untuk siapa**: lembaga 20–300 santri · Kepala Sekolah, Guru, Tata Usaha
 > **Filosofi**: menu sederhana untuk pengguna non-teknis, fitur lengkap di baliknya — semuanya berbahasa Indonesia.
 
-### Mengapa SIMAKA berbeda
+### Mengapa SchoolVia berbeda
 
-| | SIMAKA | Aplikasi sekolah umum | Excel + WhatsApp |
+| | SchoolVia | Aplikasi sekolah umum | Excel + WhatsApp |
 |---|---|---|---|
 | Pencatatan hafalan (surah, ayat, murojaah) | ✅ | ❌ | Manual |
 | Laporan ke orang tua via WA — **tanpa install app** | ✅ Link aman per-wali | ❌ | Rapi susah |
@@ -121,7 +121,7 @@ go build -o simaka .
 |---|---|---|
 | `DATABASE_URL` | `postgres://simaka:simaka123@localhost/simaka` | Koneksi PostgreSQL |
 | `PORT` | `8080` | Port HTTP |
-| `SIMAKA_PUBLIC_URL` | `https://sistemflow.com` | URL publik untuk link WA |
+| `SchoolVia_PUBLIC_URL` | `https://sistemflow.com` | URL publik untuk link WA |
 
 ### 3️⃣ Masuk
 
@@ -207,6 +207,8 @@ Ide kontribusi yang sedang dicari: terjemahan bahasa daerah, laporan baru, perba
 
 ---
 
+> ℹ️ Sebelumnya dikenal sebagai **SIMAKA** — berganti nama menjadi SchoolVia (Okt 2026). Kode & data tidak berubah.
+
 ## 📄 Lisensi
 
 Proyek ini dilisensikan under [**PolyForm Shield License 1.0.0**](LICENSE).
@@ -215,11 +217,11 @@ Proyek ini dilisensikan under [**PolyForm Shield License 1.0.0**](LICENSE).
 
 | ✅ Boleh untuk semua orang | ❌ Tidak boleh |
 |---|---|
-| Memakai SIMAKA untuk lembaga sekolah/tahfidz/TPQ apa pun | Menjadikan SIMAKA (atau turunannya) sebagai **produk yang bersaing** dengan SIMAKA |
+| Memakai SchoolVia untuk lembaga sekolah/tahfidz/TPQ apa pun | Menjadikan SchoolVia (atau turunannya) sebagai **produk yang bersaing** dengan SchoolVia |
 | Memodifikasi kode untuk kebutuhan lembaga sendiri (logo, istilah, alur) | Menjual ulang atau menawarkan versi hosted yang bersaing |
 | Membagikan salinan asli atau yang dimodifikasi | Menghapus notice lisensi |
 
-> **Kenapa lisensi ini?** Kami ingin lembaga pendidikan memakai SIMAKA tanpa was-was — termasuk memodifikasi sesuai kebutuhan. Tapi kami juga membangun SIMAKA sebagai pekerjaan yang berkelanjutan, jadi satu-satunya larangan adalah menjadikannya produk pesaing. Teks lengkap: [LICENSE](LICENSE).
+> **Kenapa lisensi ini?** Kami ingin lembaga pendidikan memakai SchoolVia tanpa was-was — termasuk memodifikasi sesuai kebutuhan. Tapi kami juga membangun SchoolVia sebagai pekerjaan yang berkelanjutan, jadi satu-satunya larangan adalah menjadikannya produk pesaing. Teks lengkap: [LICENSE](LICENSE).
 
 **Buat kontributor:** PR ke repo ini sangat dipersilakan. Dengan mengirim PR, Anda menyetujui kode Anda dilisensikan di bawah lisensi yang sama (dan haknya diberikan ke pemilik proyek).
 

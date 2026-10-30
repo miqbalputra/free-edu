@@ -91,5 +91,5 @@ func seedDataDemo(sekolahID, adminID int) {
 	db.Exec(`INSERT INTO pengeluaran (tanggal,uraian,kategori,jumlah,pencatat_id,sekolah_id) VALUES (CURRENT_DATE,'Konsumsi rapat guru','lainnya',100000,$1,$2)`, adminID, sekolahID)
 
 	// pengumuman contoh
-	db.Exec(`INSERT INTO pengumuman (judul,isi,pembuat_id,sekolah_id) VALUES ('Selamat datang di SIMAKA! 👋','Ini contoh pengumuman. Semua data contoh (siswa, nilai, tagihan) boleh dihapus kapan saja lewat menu masing-masing, atau langsung ganti dengan data asli sekolah Anda.',$1,$2)`, adminID, sekolahID)
+	db.Exec(`INSERT INTO pengumuman (judul,isi,pembuat_id,sekolah_id) VALUES ('Selamat datang di SchoolVia! 👋','Ini contoh pengumuman. Semua data contoh (siswa, nilai, tagihan) boleh dihapus kapan saja lewat menu masing-masing, atau langsung ganti dengan data asli sekolah Anda.',$1,$2)`, adminID, sekolahID)
 }

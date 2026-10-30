@@ -209,7 +209,7 @@ func handleKwitansi(w http.ResponseWriter, r *http.Request) {
  <div class="jml">Jumlah &nbsp; <b>Rp %s</b></div>
  <div class="ttd"><div class="box">Penerima<br><span class="sp"></span><u>%s</u></div>
  <div class="box">%s, ____________________<br>Kepala Sekolah</div></div>
- <div class="foot">Kwitansi ini sah dan dibuat otomatis oleh SIMAKA</div>
+ <div class="foot">Kwitansi ini sah dan dibuat otomatis oleh SchoolVia</div>
 </div></body></html>`,
 		nama, namaSekolah, alamat, itoa(id), bulan, nama, kelas, bulan, tahun, tglIndo(tglBayar), metode, petugas,
 		fnumFmt(jumlah), petugas, namaSekolah)

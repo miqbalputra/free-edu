@@ -95,7 +95,7 @@ func main() {
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 30 * time.Second,
 	}
-	fmt.Println("SIMAKA API running on :" + port)
+	fmt.Println("SchoolVia API running on :" + port)
 	log.Fatal(srv.ListenAndServe())
 }
 

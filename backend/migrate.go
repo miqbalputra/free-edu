@@ -233,6 +233,6 @@ func seed() error {
 		('1A','Senin','08:30','10:00','Bahasa Indonesia',2),
 		('2A','Senin','07:00','08:30','IPA',2)`)
 	db.Exec(`INSERT INTO pengumuman (judul,isi,target,pembuat_id) VALUES
-		('Selamat Datang di SIMAKA','Sistem Informasi Manajemen Sekolah siap digunakan. Silakan eksplorasi menu sesuai peran Anda.','semua',1)`)
+		('Selamat Datang di SchoolVia','Sistem Admin Sekolah siap digunakan. Silakan eksplorasi menu sesuai peran Anda.','semua',1)`)
 	return nil
 }

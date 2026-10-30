@@ -329,8 +329,8 @@ func waEncode(s string) string {
 func handleManifest(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Write([]byte(`{
-  "name": "SIMAKA — Manajemen Sekolah",
-  "short_name": "SIMAKA",
+  "name": "SchoolVia — Sistem Admin Sekolah",
+  "short_name": "SchoolVia",
   "start_url": "/app",
   "display": "standalone",
   "background_color": "#f4f6fb",

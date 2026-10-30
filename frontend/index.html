@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SIMAKA — Sistem Informasi Manajemen Sekolah</title>
+<title>SchoolVia — Sistem Admin Sekolah</title>
 <link rel="manifest" href="/api/manifest">
 <meta name="theme-color" content="#1e1b4b">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -177,7 +177,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
   <div v-if="token && tour" class="tour-bg" @click.self="tour=null">
       <div class="tour-card">
         <div class="tour-n">Langkah {{tour}} dari 4</div>
-        <template v-if="tour===1"><h3>🎓 Selamat datang di SIMAKA!</h3><p>Ini dashboard sekolah Anda. Semua menu ada di sidebar kiri (atau di bawah kalau pakai HP).</p></template>
+        <template v-if="tour===1"><h3>🎓 Selamat datang di SchoolVia!</h3><p>Ini dashboard sekolah Anda. Semua menu ada di sidebar kiri (atau di bawah kalau pakai HP).</p></template>
         <template v-else-if="tour===2"><h3>👨‍🎓 Mulai dari data siswa</h3><p>Buka menu "Siswa" lalu tekan "+ Tambah Siswa". Isi nama dan kelas — cukup itu dulu.</p></template>
         <template v-else-if="tour===3"><h3>✅ Absen tiap hari, 2-3 ketukan</h3><p>Menu "Absensi" untuk kehadiran harian. Lembaga Islam juga bisa mencatat setoran hafalan di menu "Hafalan".</p></template>
         <template v-else><h3>💰 Tagihan &amp; laporan otomatis</h3><p>Menu "SPP" membuat tagihan sekaligus, dan "Laporan Rekap" menyusun laporan bulanan siap cetak. Selamat mencoba! 🎉</p></template>
@@ -188,11 +188,11 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
         </div>
       </div>
     </div>
-    <a v-if="token" href="https://wa.me/6281234567890?text=Assalamualaikum%2C%20saya%20butuh%20bantuan%20SIMAKA" target="_blank" class="wa-float" title="Butuh bantuan? Chat kami via WhatsApp">💬 <span>Bantuan</span></a>
+    <a v-if="token" href="https://wa.me/6281234567890?text=Assalamualaikum%2C%20saya%20butuh%20bantuan%20SchoolVia" target="_blank" class="wa-float" title="Butuh bantuan? Chat kami via WhatsApp">💬 <span>Bantuan</span></a>
   <div v-if="!token" class="login-wrap">
   <div class="login-card">
     <div class="login-hero">
-      <h1>🎓 SIMAKA</h1>
+      <h1>🎓 SchoolVia</h1>
       <p>Sistem Informasi Manajemen Sekolah All-in-One untuk Kepala Sekolah, Guru, dan Tata Usaha.</p>
       <div class="hero-feats">
         <div><span>👨‍🎓</span> Data siswa &amp; absensi harian</div>
@@ -255,7 +255,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
   <!-- APP SHELL -->
   <div v-else class="shell" :class="'role-'+user.role">
     <aside class="sidebar">
-      <div class="brand"><h1><span class="mk">🎓</span> SIMAKA</h1><small>{{ roleLabel }} · Manajemen Sekolah</small></div>
+      <div class="brand"><h1><span class="mk">🎓</span> SchoolVia</h1><small>{{ roleLabel }} · Manajemen Sekolah</small></div>
       <nav class="nav">
         <button :class="{active:page==='dashboard'}" @click="page='dashboard'">🏠 Dashboard</button>
         <div class="sec">Kesiswaan</div>
@@ -303,7 +303,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           <b>Masa trial: sisa {{ langganan.trial_sisa_hari }} hari.</b>
           Setelah trial berakhir, akun otomatis turun ke paket Gratis (maks 30 siswa, 3 pengguna, tanpa ekspor & laporan rekap).
         </div>
-        <a href="https://wa.me/6281234567890?text=Halo%2C%20saya%20mau%20upgrade%20SIMAKA" target="_blank" class="btn" style="text-decoration:none;white-space:nowrap">Upgrade</a>
+        <a href="https://wa.me/6281234567890?text=Halo%2C%20saya%20mau%20upgrade%20SchoolVia" target="_blank" class="btn" style="text-decoration:none;white-space:nowrap">Upgrade</a>
       </div>
 
       <!-- Banner plan gratis: kuota -->
@@ -312,7 +312,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
         <div style="flex:1;font-size:13.5px">
           <b>Paket Gratis</b> — {{ langganan.pakai_siswa }}/{{ langganan.limit_siswa }} siswa · {{ langganan.pakai_user }}/{{ langganan.limit_user }} pengguna · ekspor & laporan rekap terkunci.
         </div>
-        <a href="https://wa.me/6281234567890?text=Halo%2C%20saya%20mau%20upgrade%20SIMAKA" target="_blank" class="btn" style="text-decoration:none;white-space:nowrap">Upgrade</a>
+        <a href="https://wa.me/6281234567890?text=Halo%2C%20saya%20mau%20upgrade%20SchoolVia" target="_blank" class="btn" style="text-decoration:none;white-space:nowrap">Upgrade</a>
       </div>
 
       <!-- DASHBOARD -->
@@ -662,7 +662,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
       <!-- UPGRADE / PLAN -->
       <div v-if="page==='upgrade'">
         <div class="panel" style="text-align:center;margin-bottom:20px">
-          <h3 style="margin-bottom:6px">Paket Langganan SIMAKA</h3>
+          <h3 style="margin-bottom:6px">Paket Langganan SchoolVia</h3>
           <p style="color:var(--muted);font-size:13.5px;margin:0">
             Paket Anda sekarang: <b :style="{color: langganan.plan==='gratis' ? 'var(--accent)' : 'var(--primary)'}">{{ planLabel }}</b>
             <template v-if="langganan.limit_siswa"> · {{ langganan.pakai_siswa }}/{{ langganan.limit_siswa }} siswa · {{ langganan.pakai_user }}/{{ langganan.limit_user }} pengguna</template>
@@ -837,7 +837,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
         <!-- LANGKAH 1: pilih file -->
         <template v-if="importStep==='pilih'">
           <h3>📥 Import Siswa dari Excel/CSV</h3>
-          <p style="font-size:13.5px;opacity:.8;margin:8px 0 12px">Punya daftar siswa di Excel atau Google Sheets? Simpan sebagai file <b>CSV</b> (di Excel: File → Save As → CSV), lalu unggah di sini. SIMAKA akan mencocokkan kolomnya otomatis — nama dan kelas wajib ada.</p>
+          <p style="font-size:13.5px;opacity:.8;margin:8px 0 12px">Punya daftar siswa di Excel atau Google Sheets? Simpan sebagai file <b>CSV</b> (di Excel: File → Save As → CSV), lalu unggah di sini. SchoolVia akan mencocokkan kolomnya otomatis — nama dan kelas wajib ada.</p>
           <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
             <input type="file" accept=".csv,text/csv" @change="importFile" style="font-size:13px">
             <a class="btn sec sm" href="/api/import/template" download>⬇️ Unduh contoh format</a>
@@ -1204,8 +1204,8 @@ createApp({
     const initials = computed(() => (user.value.nama || '?').split(' ').slice(0,2).map(w=>w[0]).join(''));
     const pages = {dashboard:'Dashboard', siswa:'Data Siswa', absensi:'Absensi Siswa', nilai:'Nilai', rapor:'Rapor Siswa', hafalan:'Setoran Hafalan', jadwal:'Jadwal Pelajaran', 'absensi-guru':'Absensi Guru & Pegawai', spp:'SPP — Pembayaran Siswa', keuangan:'Keuangan Sekolah', agenda:'Agenda Kegiatan', pengumuman:'Pengumuman', users:'Manajemen Pengguna', log:'Log Aktivitas', pengaturan:'Profil Sekolah', akun:'Akun Saya', upgrade:'Paket & Upgrade'};
     const planLabel = computed(() => ({gratis:'🆓 Gratis', sekolah:'🏫 Sekolah', yayasan:'🕌 Yayasan'}[langganan.value.plan] || 'Gratis'));
-    const waUpgrade = 'https://wa.me/6281234567890?text=' + encodeURIComponent('Halo, saya mau upgrade SIMAKA. Sekolah: ' + (user.value ? user.value.nama : '') );
-    const waWaitlist = 'https://wa.me/6281234567890?text=' + encodeURIComponent('Halo, saya mau daftar WAITLIST paket Yayasan SIMAKA (multi-cabang). Sekolah: ' + (user.value ? user.value.nama : '') + '. Kabari saya begitu fiturnya siap.');
+    const waUpgrade = 'https://wa.me/6281234567890?text=' + encodeURIComponent('Halo, saya mau upgrade SchoolVia. Sekolah: ' + (user.value ? user.value.nama : '') );
+    const waWaitlist = 'https://wa.me/6281234567890?text=' + encodeURIComponent('Halo, saya mau daftar WAITLIST paket Yayasan SchoolVia (multi-cabang). Sekolah: ' + (user.value ? user.value.nama : '') + '. Kabari saya begitu fiturnya siap.');
     // === WhatsApp ke orang tua (link wa.me, tanpa API) ===
     function waNorm(hp){
       let h = String(hp||'').replace(/[^0-9]/g,'');

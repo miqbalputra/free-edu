@@ -113,5 +113,5 @@ func handleExportAll(w http.ResponseWriter, r *http.Request) {
 	}
 	// README kecil di dalam ZIP
 	rd, _ := zw.Create("BACA-SAYA.txt")
-	rd.Write([]byte("Data ini milik sekolah Anda. Bisa dibuka dengan Excel/Google Sheets.\nDiunduh dari SIMAKA pada " + time.Now().Format("2 Jan 2006") + ".\n"))
+	rd.Write([]byte("Data ini milik sekolah Anda. Bisa dibuka dengan Excel/Google Sheets.\nDiunduh dari SchoolVia pada " + time.Now().Format("2 Jan 2006") + ".\n"))
 }
