@@ -389,6 +389,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           <select v-model="filterKelas"><option value="">Semua Kelas</option><option v-for="k in kelasList" :value="k">{{ k }}</option></select>
           <input v-model="qSiswa" @input="debouncedSiswa" placeholder="🔍 Cari nama / NIS..." style="flex:1;min-width:180px">
           <button class="btn" @click="openSiswa()">+ Tambah Siswa</button>
+          <button class="btn sec" @click="importOpen=true; importStep='pilih'">📥 Import Excel/CSV</button>
         </div>
         <table v-if="siswaData.length">
           <tr><th>NIS</th><th>Nama</th><th>L/P</th><th>Kelas</th><th>Orang Tua</th><th>HP</th><th>Status</th><th></th></tr>
@@ -801,6 +802,57 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
       </div>
     </div>
 
+    <div v-if="importOpen" class="modal-bg" @click.self="importOpen=false">
+      <div class="modal" style="max-width:640px">
+        <!-- LANGKAH 1: pilih file -->
+        <template v-if="importStep==='pilih'">
+          <h3>📥 Import Siswa dari Excel/CSV</h3>
+          <p style="font-size:13.5px;opacity:.8;margin:8px 0 12px">Punya daftar siswa di Excel atau Google Sheets? Simpan sebagai file <b>CSV</b> (di Excel: File → Save As → CSV), lalu unggah di sini. SIMAKA akan mencocokkan kolomnya otomatis — nama dan kelas wajib ada.</p>
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+            <input type="file" accept=".csv,text/csv" @change="importFile" style="font-size:13px">
+            <a class="btn sec sm" href="/api/import/template" download>⬇️ Unduh contoh format</a>
+          </div>
+          <div v-if="importErr" style="margin-top:10px;color:#dc2626;font-size:13px">{{ importErr }}</div>
+        </template>
+
+        <!-- LANGKAH 2: preview & petakan kolom -->
+        <template v-else-if="importStep==='preview'">
+          <h3>Periksa dulu — {{ importTotal }} baris ditemukan</h3>
+          <p style="font-size:13px;opacity:.75;margin:6px 0 10px">Pastikan kolom di bawah sudah cocok. Ubah lewat dropdown jika terbalik.</p>
+          <div class="frow" style="gap:8px">
+            <div v-for="f in ['nis','nama','kelas','jk','nama_ortu','hp_ortu']" :key="f">
+              <label>{{ {nis:'NIS',nama:'Nama *',kelas:'Kelas *',jk:'L/P',nama_ortu:'Nama Ortu',hp_ortu:'HP Ortu'}[f] }}</label>
+              <select v-model.number="importMap[f]"><option :value="-1">— lewati —</option><option v-for="(h,i) in importHeader" :value="i">{{ h }}</option></select>
+            </div>
+          </div>
+          <div style="overflow-x:auto;margin-top:12px;border:1px solid var(--line);border-radius:10px">
+            <table style="font-size:12px;min-width:100%">
+              <tr style="background:var(--chip,#eef2ff)"><th v-for="h in importHeader">{{ h }}</th></tr>
+              <tr v-for="(r,i) in importPreview"><td v-for="c in r">{{ c }}</td></tr>
+            </table>
+          </div>
+          <div style="margin-top:16px;display:flex;gap:10px">
+            <button class="btn" :disabled="importMap.nama<0 || importMap.kelas<0" @click="doImport">✅ Import Sekarang</button>
+            <button class="btn sec" @click="importStep='pilih'">← Pilih file lain</button>
+          </div>
+        </template>
+
+        <!-- LANGKAH 3: hasil -->
+        <template v-else>
+          <h3>🎉 Selesai!</h3>
+          <div style="font-size:14.5px;line-height:2;margin:10px 0">
+            ✅ <b>{{ importHasil.masuk }}</b> siswa masuk<br>
+            <span v-if="importHasil.diperbaiki">🛠️ <b>{{ importHasil.diperbaiki }}</b> otomatis diperbaiki<br></span>
+            <span v-if="importHasil.dilewati">⚠️ <b>{{ importHasil.dilewati }}</b> dilewati<br></span>
+          </div>
+          <div v-if="importHasil.catatan && importHasil.catatan.length" style="max-height:160px;overflow-y:auto;background:#f9fafb;border-radius:10px;padding:10px;font-size:12.5px;color:#4b5563">
+            <div v-for="(c,i) in importHasil.catatan" :key="i">{{ c }}</div>
+          </div>
+          <div style="margin-top:16px"><button class="btn" @click="importOpen=false; load('siswa')">Lihat Daftar Siswa</button></div>
+        </template>
+      </div>
+    </div>
+
     <div v-if="modalHafalan" class="modal-bg" @click.self="modalHafalan=false">
       <div class="modal">
         <h3>Catat Setoran Hafalan</h3>
@@ -993,6 +1045,55 @@ createApp({
     const mode = ref('login'); const daftar = ref({isi_demo:true});
     const langganan = ref({status:'aktif',trial_sisa_hari:0}); const modalWA = ref(false); const waList = ref([]);
     const kodeRef = ref('');
+    const importOpen = ref(false); const importStep = ref('pilih'); const importErr = ref('');
+    const importHeader = ref([]); const importPreview = ref([]); const importTotal = ref(0);
+    const importMap = ref({nis:-1,nama:-1,kelas:-1,jk:-1,nama_ortu:-1,hp_ortu:-1});
+    const importAllRows = ref([]); const importHasil = ref({});
+    async function importFile(ev){
+      importErr.value='';
+      const f = ev.target.files[0]; if(!f) return;
+      if(f.size > 5*1024*1024){ importErr.value='File terlalu besar (maksimal 5 MB).'; return; }
+      const fd = new FormData(); fd.append('file', f);
+      try {
+        const res = await fetch(API+'/import/preview', { method:'POST', headers:{Authorization:'Bearer '+token.value}, body:fd });
+        const d = await res.json();
+        if(!res.ok){ importErr.value = d.error || 'File tidak terbaca.'; return; }
+        importHeader.value = d.header; importPreview.value = d.preview; importTotal.value = d.total;
+        importMap.value = { nis:d.mapping.nis, nama:d.mapping.nama, kelas:d.mapping.kelas, jk:d.mapping.jk, nama_ortu:d.mapping.nama_ortu, hp_ortu:d.mapping.hp_ortu };
+        // simpan semua baris utk import (kita sudah punya file — baca ulang lokal)
+        const text = await f.text();
+        importAllRows.value = text;
+        importStep.value = 'preview';
+      } catch(e){ importErr.value='Gagal mengunggah. Coba lagi.'; }
+    }
+    async function doImport(){
+      try {
+        // parsing CSV lokal sederhana (koma/titik koma) — kirim semua baris ke server
+        const rows = await new Promise(res=>{
+          const fr = new FileReader();
+          fr.onload = ()=> {
+            const txt = fr.result.replace(/^\ufeff/,'');
+            const first = txt.split('\n')[0];
+            const delim = (first.split(';').length > first.split(',').length) ? ';' : ',';
+            const out=[]; let cur=[], val='', q=false;
+            for(let i=0;i<txt.length;i++){ const ch=txt[i];
+              if(q){ if(ch==='"'){ if(txt[i+1]==='"'){val+='"';i++;} else q=false; } else val+=ch; }
+              else if(ch==='"') q=true;
+              else if(ch===delim){ cur.push(val.trim()); val=''; }
+              else if(ch==='\n'||ch==='\r'){ if(val!==''||cur.length){ cur.push(val.trim()); out.push(cur); cur=[]; val=''; } if(ch==='\r'&&txt[i+1]==='\n') i++; }
+              else val+=ch;
+            }
+            if(val!==''||cur.length){ cur.push(val.trim()); out.push(cur); }
+            res(out);
+          };
+          fr.readAsText(importAllRows.value);
+        });
+        if(rows.length<2){ showToast('File kosong.', true); return; }
+        const body = { header: rows[0], rows: rows.slice(1), mapping: importMap.value };
+        const r = await api('/import/siswa', { method:'POST', body: JSON.stringify(body) });
+        importHasil.value = r; importStep.value = 'hasil';
+      } catch(e){ showToast(e.message, true); }
+    }
     const tour = ref(localStorage.getItem('simaka_tour') ? null : 1);
     watch(tour,(t)=>{ if(t===null) localStorage.setItem('simaka_tour','1'); });
     function quickHafalan(s){ formHafalan.value = { siswa_id: s.id, surah:'', status:'baru', ayat_dari:null, ayat_sampai:null, catatan:'' }; modalHafalan.value=true; }
