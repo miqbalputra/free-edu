@@ -183,6 +183,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
         <template v-else><h3>💰 Tagihan &amp; laporan otomatis</h3><p>Menu "SPP" membuat tagihan sekaligus, dan "Laporan Rekap" menyusun laporan bulanan siap cetak. Selamat mencoba! 🎉</p></template>
         <div style="margin-top:16px;display:flex;gap:10px">
           <button class="btn" @click="tour = tour>=4 ? null : tour+1">{{ tour>=4 ? 'Mulai Pakai ✅' : 'Lanjut →' }}</button>
+          <a v-if="tour>=4" class="btn sec" :href="waWaitlist" target="_blank" style="text-decoration:none;display:inline-flex;align-items:center">🎁 Ajak lembaga lain — dapat 1 bulan gratis</a>
           <button class="btn sec" @click="tour=null">Lewati</button>
         </div>
       </div>
