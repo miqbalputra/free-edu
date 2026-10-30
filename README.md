@@ -7,7 +7,7 @@
 [![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat-square&logo=go&logoColor=white)](https://go.dev)
 [![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D?style=flat-square&logo=vue.js&logoColor=white)](https://vuejs.org)
 [![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://postgresql.org)
-[![License](https://img.shields.io/badge/License-PolyForm%20Strict%201.0.0-blue?style=flat-square)](LICENSE)
+[![License](https://img.shields.io/badge/License-PolyForm%20Shield%201.0.0-blue?style=flat-square)](LICENSE)
 [![Release](https://img.shields.io/github/v/release/miqbalputra/free-edu?style=flat-square)](https://github.com/miqbalputra/free-edu/releases)
 [![PWA](https://img.shields.io/badge/PWA-Installable-5A0FC8?style=flat-square&logo=pwa&logoColor=white)](#-pwa)
 
@@ -209,13 +209,19 @@ Ide kontribusi yang sedang dicari: terjemahan bahasa daerah, laporan baru, perba
 
 ## 📄 Lisensi
 
-Proyek ini dilisensikan under [**PolyForm Strict License 1.0.0**](LICENSE).
+Proyek ini dilisensikan under [**PolyForm Shield License 1.0.0**](LICENSE).
 
-| Boleh | Tidak Boleh |
+**Singkatnya — untuk lembaga sekolah:** pakai, sesuaikan, dan jalankan untuk lembaga Anda sepuasnya, termasuk untuk kegiatan berbayar seperti SPP. Tidak ada batasan untuk Anda.
+
+| ✅ Boleh untuk semua orang | ❌ Tidak boleh |
 |---|---|
-| ✅ Dipakai siapa pun, untuk tujuan apa pun (komersial/internal sekolah) | ❌ Memodifikasi kode |
-| ✅ Menjalankan untuk lembaga sendiri | ❌ Mendistribusikan versi modifikasi |
-| ✅ Berkontribusi via pull request ke repo ini | ❌ Menjual ulang sebagai produk lain |
+| Memakai SIMAKA untuk lembaga sekolah/tahfidz/TPQ apa pun | Menjadikan SIMAKA (atau turunannya) sebagai **produk yang bersaing** dengan SIMAKA |
+| Memodifikasi kode untuk kebutuhan lembaga sendiri (logo, istilah, alur) | Menjual ulang atau menawarkan versi hosted yang bersaing |
+| Membagikan salinan asli atau yang dimodifikasi | Menghapus notice lisensi |
+
+> **Kenapa lisensi ini?** Kami ingin lembaga pendidikan memakai SIMAKA tanpa was-was — termasuk memodifikasi sesuai kebutuhan. Tapi kami juga membangun SIMAKA sebagai pekerjaan yang berkelanjutan, jadi satu-satunya larangan adalah menjadikannya produk pesaing. Teks lengkap: [LICENSE](LICENSE).
+
+**Buat kontributor:** PR ke repo ini sangat dipersilakan. Dengan mengirim PR, Anda menyetujui kode Anda dilisensikan di bawah lisensi yang sama (dan haknya diberikan ke pemilik proyek).
 
 ---
 
