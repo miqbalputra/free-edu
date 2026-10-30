@@ -1,91 +1,228 @@
-# SIMAKA — Sistem Informasi Manajemen Sekolah (All-in-One, Multi-Sekolah SaaS)
+<div align="center">
 
-Aplikasi web sekolah Indonesia: Kepala Sekolah, Guru, Tata Usaha.
-Stack: **Go (backend) + Vue 3 (frontend) + PostgreSQL**.
+# 🎓 SIMAKA
 
-## Fitur
-- 15+ modul: siswa, absensi (siswa & guru), nilai (+massal), rapor cetak-PDF, hafalan, jadwal, SPP, keuangan, agenda, pengumuman, log aktivitas
-- Multi-tenant: sekolah daftar sendiri (trial 14 hari), data terisolasi per sekolah
-- Notifikasi WhatsApp tagihan SPP (link wa.me siap kirim)
-- Ekspor Excel (absensi, SPP, nilai, buku kas)
-- Landing page penjualan + PWA (bisa di-install di HP)
-- Keamanan: bcrypt, JWT auto-secret, rate limit login, audit trail, backup harian otomatis
+**Sistem Informasi Manajemen Sekolah Tahfidz & TPQ — All-in-One, Multi-Sekolah SaaS**
 
-## Fitur per Role
+[![Go](https://img.shields.io/badge/Go-1.22+-00ADD8?style=flat-square&logo=go&logoColor=white)](https://go.dev)
+[![Vue 3](https://img.shields.io/badge/Vue-3-4FC08D?style=flat-square&logo=vue.js&logoColor=white)](https://vuejs.org)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-4169E1?style=flat-square&logo=postgresql&logoColor=white)](https://postgresql.org)
+[![License](https://img.shields.io/badge/License-PolyForm%20Strict%201.0.0-blue?style=flat-square)](LICENSE)
+[![Release](https://img.shields.io/github/v/release/miqbalputra/free-edu?style=flat-square)](https://github.com/miqbalputra/free-edu/releases)
+[![PWA](https://img.shields.io/badge/PWA-Installable-5A0FC8?style=flat-square&logo=pwa&logoColor=white)](#-pwa)
 
-| Modul | Kepala Sekolah | Guru | TU |
+*Absensi · Hafalan · Nilai & Rapor · SPP & Keuangan · Laporan Orang Tua — semuanya dari HP, tanpa install.*
+
+[🚀 Coba Demo](https://sistemflow.com/app?demo=1) · [📖 Dokumentasi](#-memulai) · [💬 WhatsApp](https://wa.me/6281234567890) · [📝 Pitch Deck](frontend/pitch.html)
+
+</div>
+
+---
+
+## 📌 Tentang SIMAKA
+
+SIMAKA adalah aplikasi admin untuk **lembaga tahfidz & TPQ di Indonesia** — dibangun dari keluhan nyata: hafalan santri tercatat di buku tulis yang lama-lama hilang, tagihan SPP bocor karena diperiksa manual, dan orang tua harus bertanya satu-satu soal perkembangan anaknya.
+
+> **Untuk siapa**: lembaga 20–300 santri · Kepala Sekolah, Guru, Tata Usaha
+> **Filosofi**: menu sederhana untuk pengguna non-teknis, fitur lengkap di baliknya — semuanya berbahasa Indonesia.
+
+### Mengapa SIMAKA berbeda
+
+| | SIMAKA | Aplikasi sekolah umum | Excel + WhatsApp |
 |---|---|---|---|
-| Dashboard statistik | ✅ | ✅ | ✅ |
-| Data siswa (CRUD) | ✅ | lihat | ✅ |
-| Absensi siswa (H/S/I/A) | ✅ | ✅ | ✅ |
-| Absensi guru (masuk/pulang) | ✅ | ✅ (diri sendiri) | ✅ |
-| Nilai (Tugas/UH/PTS/PAS) | ✅ | ✅ | lihat |
-| Hafalan (surah, ayat, status) | ✅ | ✅ | lihat |
-| Jadwal pelajaran | ✅ | lihat | ✅ |
-| SPP (generate tagihan, bayar) | ✅ | lihat | ✅ |
-| Keuangan (pemasukan/pengeluaran) | ✅ | — | ✅ |
-| Agenda & pengumuman | ✅ | ✅ | ✅ |
-| Manajemen pengguna | ✅ | — | — |
+| Pencatatan hafalan (surah, ayat, murojaah) | ✅ | ❌ | Manual |
+| Laporan ke orang tua via WA — **tanpa install app** | ✅ Link aman per-wali | ❌ | Rapi susah |
+| SPP sekali klik + kwitansi berkop sekolah | ✅ | Sebagian | Manual |
+| Data milik Anda — unduh ZIP kapan saja, apa pun paket | ✅ Termasuk gratis | Sering jadi sandera | ✅ |
+| Bahasa & alur khas tahfidz (juz, murojaah, setoran) | ✅ | ❌ | ✅ |
 
-## Menjalankan
+---
+
+## ✨ Fitur
+
+### 🎓 Operasional Harian
+- **Absensi santri** — satu layar per kelas: Hadir, Sakit, Izin, Alpa (2 klik dari HP); absensi guru masuk/pulang dengan jam otomatis
+- **Pencatatan hafalan** — setoran surah & ayat, status lancar/murojaah/baru, riwayat lengkap per santri, tombol ⚡ Hafal cepat per siswa
+- **Nilai & rapor** — input nilai massal satu kelas, rapor resmi berkop sekolah siap cetak/PDF, catatan wali kelas
+- **Jadwal, agenda & pengumuman** — dengan wali kelas per kelas
+
+### 💰 Keuangan
+- **SPP sekali klik** — generate tagihan bulanan sekaligus untuk semua santri
+- **Kwitansi digital** — berkop sekolah, nomor kwitansi, dua kolom tanda tangan, siap cetak
+- **Buku kas** — pemasukan/pengeluaran, saldo otomatis, ekspor Excel
+- **Pengingat & kwitansi via WhatsApp** — pesan siap kirim ke orang tua (nama, bulan, nominal sudah tertulis)
+
+### 📊 Laporan & Orang Tua
+- **Laporan rekap bulanan** — SPP, kas, absensi, nilai, hafalan dalam satu halaman siap cetak
+- **Laporan wali murid** — link read-only khusus per orang tua (kadaluarsa 90 hari, bisa di-reset): hafalan, kehadiran, tagihan — dalam bahasa awam, tanpa install apa pun
+- **Laporan mingguan otomatis** — pengasuh menerima ringkasan di WhatsApp tiap malam tanpa perlu buka aplikasi
+
+### 🔐 Milik Anda Selamanya (Anti-Sandera)
+- **Unduh Semua Data** — satu klik → ZIP berisi seluruh data sekolah dalam format Excel-friendly
+- Tersedia di **semua paket termasuk gratis** — berhenti langganan pun data tetap bisa diunduh (mode baca, bukan dikunci)
+- Ekspor per-modul: siswa, nilai, hafalan, absensi, SPP, kas, rekap
+
+### 🏗️ Platform SaaS
+- **Multi-tenant** — sekolah mendaftar mandiri, data terisolasi penuh antar sekolah (terverifikasi uji lintas-tenant)
+- **Paket berjenjang** — Gratis (≤30 santri) / Sekolah Rp45rb-bln (≤150) / Yayasan (multi-cabang, segera)
+- **Program rujukan** — kode unik per sekolah; perujuk dapat 1 bulan gratis
+- **Panel admin platform** — statistik MRR, kelola sekolah & langganan
+- **PWA** — dipasang dari browser tanpa Play Store/App Store, ada dark mode
+- **Import massal** — daftar siswa dari Excel/CSV: preview, pemetaan kolom otomatis, perbaikan kelas otomatis, anti-duplikat
+
+---
+
+## 👥 Fitur per Peran
+
+| Modul | Kepala Sekolah | Guru | Tata Usaha |
+|---|:---:|:---:|:---:|
+| Dashboard statistik | ✅ | ✅ | ✅ |
+| Data siswa (CRUD + import) | ✅ | lihat | ✅ |
+| Absensi santri | ✅ | ✅ | ✅ |
+| Nilai & hafalan | ✅ | ✅ input | lihat |
+| SPP & keuangan | ✅ | lihat | ✅ |
+| Laporan rekap & wali murid | ✅ | — | ✅ |
+| Manajemen pengguna & paket | ✅ | — | — |
+| Profil sekolah & unduh data | ✅ | — | ✅ |
+
+Tema warna berbeda per peran — setiap orang langsung tahu dia sedang "di mana".
+
+---
+
+## 🚀 Memulai
+
+### Prasyarat
+- Go 1.22+
+- PostgreSQL 14+
+- (opsional) Node tidak diperlukan — frontend disajikan langsung oleh Go
+
+### 1️⃣ Siapkan database
 
 ```bash
-# 1. Database (sekali saja)
 sudo -u postgres psql -c "CREATE USER simaka WITH PASSWORD 'simaka123';"
 sudo -u postgres psql -c "CREATE DATABASE simaka OWNER simaka;"
-
-# 2. Backend (migrasi & seed data demo otomatis)
-cd backend && go build -o simaka . && ./simaka
-# aplikasi: http://localhost:8080
-
-# Variabel opsional: DATABASE_URL, PORT
 ```
 
-## Akun Demo
-- Kepala Sekolah: `kepala@simaka.id` / `kepala123`
-- Guru: `guru@simaka.id` / `guru123`
-- Tata Usaha: `tu@simaka.id` / `tu123`
+### 2️⃣ Jalankan
 
-## Changelog
+```bash
+git clone https://github.com/miqbalputra/free-edu.git
+cd free-edu/backend
+go build -o simaka .
+./simaka
+```
 
-### v1.1 — Rilis Keamanan & Fitur Lengkap
+✅ Migrasi skema & data demo otomatis saat pertama jalan.
+🌐 Aplikasi: `http://localhost:8080` · Landing: `http://localhost:8080/`
 
-**Keamanan (audit penuh 21 temuan → semua diperbaiki)**
-- 🔒 Isolasi tenant di semua ekspor (SPP, nilai, absensi, keuangan), rapor cetak, kwitansi, dan daftar siswa per kelas
-- 🔒 Cek kepemilikan data di semua update/hapus (siswa, nilai, hafalan, jadwal, agenda, pengeluaran, pengguna)
-- 🔒 Reset password hanya dalam sekolah yang sama
-- 🔒 Validasi nilai 0–100 (satuan & massal)
-- 🔒 Generate SPP difilter per sekolah
-- 🔒 Security headers: CSP, X-Frame-Options, nosniff, Referrer-Policy, Permissions-Policy
-- 🔒 CORS whitelist (bukan `*` lagi)
-- 🔒 Rate-limit login persisten ke database (lock 15 menit setelah 5 gagal, bertahan antar restart)
+**Konfigurasi** (opsional, environment variable):
 
-**Fitur baru**
-- 📊 Laporan rekap bulanan: absensi per kelas, SPP, kas, hafalan, rata-rata nilai
-- 🧑‍💼 Wali kelas per kelas
-- 🧾 Kwitansi SPP siap cetak (kop sekolah, nomor kwitansi, tanda tangan)
-- 🗑️ Hapus data: nilai, hafalan, jadwal, agenda, pengeluaran, pengguna
-- 📱 Ikon PWA 192/512 + manifest lengkap
-- 📅 Tahun ajaran dinamis dari pengaturan sekolah
-- 🔄 Transaksi database (hapus siswa & generate SPP all-or-nothing)
-- 🧹 Rotasi otomatis log aktivitas
+| Variabel | Default | Keterangan |
+|---|---|---|
+| `DATABASE_URL` | `postgres://simaka:simaka123@localhost/simaka` | Koneksi PostgreSQL |
+| `PORT` | `8080` | Port HTTP |
+| `SIMAKA_PUBLIC_URL` | `https://sistemflow.com` | URL publik untuk link WA |
 
-### v1.0 — Rilis Awal
-- Manajemen siswa, nilai, hafalan, jadwal, agenda, pengumuman, absensi siswa & guru
-- SPP multi-bulan + notifikasi WhatsApp tagihan
-- Keuangan: pemasukan, pengeluaran, buku kas + ekspor Excel
-- Rapor lengkap (nilai, kehadiran, catatan guru, predikat) siap cetak
-- Multi-sekolah SaaS: pendaftaran mandiri, trial 14 hari, gating langganan
-- Tema warna per peran (kepala sekolah, guru, tata usaha)
-- PWA (bisa dipasang di HP), landing page
+### 3️⃣ Masuk
 
-## Catatan Produksi
-- Ganti `jwtSecret` di `backend/auth.go` sebelum dijual.
-- Frontend bisa di-host terpisah (nginx) atau tetap disajikan Go (`GET /`).
-- Untuk akses publik, buka port 80/443 di Tencent Security Group + pasang reverse proxy (Caddy/nginx) dengan HTTPS.
+| Peran | Email | Password |
+|---|---|---|
+| Kepala Sekolah | `kepala@simaka.id` | (lihat data demo) |
+| Guru | `guru@simaka.id` | (lihat data demo) |
+| Tata Usaha | `tu@simaka.id` | (lihat data demo) |
 
-## Lisensi
-**PolyForm Strict License 1.0.0** — lihat [LICENSE](LICENSE).
-- ✅ Bebas dipakai siapapun, untuk tujuan apa pun (termasuk komersial/internal sekolah)
-- ❌ Dilarang memodifikasi kode atau mendistribusikan versi modifikasi
-- 🤝 Kontribusi dipersilakan via pull request
+> Data demo berisi sekolah contoh dengan santri, nilai, hafalan, dan tagihan — pas untuk mencoba semua alur sebelum data asli dimasukkan.
+
+---
+
+## 🏛️ Arsitektur
+
+```
+┌─────────────────────────────────────────────────┐
+│                   Browser / PWA                  │
+│      Vue 3 (single-page, dark mode, i18n ID)     │
+└──────────────────────┬──────────────────────────┘
+                       │ HTTPS (JWT Bearer)
+┌──────────────────────▼──────────────────────────┐
+│                Go Backend (single binary)        │
+│  ┌───────────┐ ┌───────────┐ ┌───────────────┐  │
+│  │ Auth      │ │ Tenant    │ │ Plan/Billing  │  │
+│  │ JWT+bcrypt│ │ middleware│ │ kuota+gating  │  │
+│  └───────────┘ └───────────┘ └───────────────┘  │
+│  ┌───────────┐ ┌───────────┐ ┌───────────────┐  │
+│  │ Modules   │ │ Reports   │ │ WA Outbound   │  │
+│  │ 15+ CRUD  │ │ rekap/wali│ │ wa.me links   │  │
+│  └───────────┘ └───────────┘ └───────────────┘  │
+│  Rate-limit (DB) · Security headers · Audit log  │
+└──────────────────────┬──────────────────────────┘
+                       │
+┌──────────────────────▼──────────────────────────┐
+│              PostgreSQL (28 index, 18 FK)         │
+│   Multi-tenant via sekolah_id di semua tabel     │
+└─────────────────────────────────────────────────┘
+```
+
+**Prinsip keamanan** (hasil audit penuh, 21 temuan → diperbaiki semua):
+- Isolasi tenant di **setiap** endpoint — termasuk ekspor, rapor cetak, kwitansi (terverifikasi uji lintas-sekolah)
+- bcrypt + JWT auto-generated secret · rate-limit login persisten (5 gagal → lock 15 menit)
+- Security headers: CSP, X-Frame-Options, nosniff, Referrer-Policy
+- Hapus siswa = **arsip** (status `keluar`) — nilai, tagihan, hafalan tetap tersimpan
+- Transaksi DB untuk operasi multi-tabel (hapus siswa, generate SPP)
+
+Struktur proyek:
+
+```
+free-edu/
+├── backend/           # Go — semua handler & migrasi
+│   ├── routes.go      #   routing & middleware
+│   ├── exports.go     #   ekspor CSV per modul
+│   ├── rekap.go       #   laporan rekap & kwitansi
+│   ├── wali_token.go  #   token laporan orang tua
+│   └── ...
+├── frontend/          # Vue 3 (index.html), landing, pitch, ikon PWA
+└── LICENSE            # PolyForm Strict 1.0.0
+```
+
+---
+
+## 🗺️ Roadmap
+
+- [x] Multi-tenant SaaS + trial mandiri
+- [x] Keamanan penuh (audit 21 temuan)
+- [x] Laporan wali murid via WA (token per-wali, kadaluarsa, reset)
+- [x] Unduh Semua Data (anti-sandera) di semua paket
+- [x] Import massal Excel/CSV
+- [x] Laporan mingguan otomatis ke WhatsApp pengasuh
+- [ ] **Multi-cabang** (paket Yayasan) — *sedang dibangun, waitlist terbuka*
+- [ ] Pembayaran otomatis (QRIS/Midtrans)
+- [ ] Notifikasi tagihan terjadwal
+
+---
+
+## 🤝 Kontribusi
+
+Kontribusi dipersilakan! Karena lisensi PolyForm Strict, kontribusi berupa **pull request ke repo ini** (bukan fork modifikasi). Baca dulu [Lisensi](#-lisensi) di bawah.
+
+Ide kontribusi yang sedang dicari: terjemahan bahasa daerah, laporan baru, perbaikan UX untuk pengguna gaptek, dokumentasi.
+
+---
+
+## 📄 Lisensi
+
+Proyek ini dilisensikan under [**PolyForm Strict License 1.0.0**](LICENSE).
+
+| Boleh | Tidak Boleh |
+|---|---|
+| ✅ Dipakai siapa pun, untuk tujuan apa pun (komersial/internal sekolah) | ❌ Memodifikasi kode |
+| ✅ Menjalankan untuk lembaga sendiri | ❌ Mendistribusikan versi modifikasi |
+| ✅ Berkontribusi via pull request ke repo ini | ❌ Menjual ulang sebagai produk lain |
+
+---
+
+<div align="center">
+
+**Dibuat oleh [Iqbal Putra](https://github.com/miqbalputra) · [SistemFlow.com](https://sistemflow.com)**
+
+[🚀 Coba Demo](https://sistemflow.com/app?demo=1) · [💬 Chat WhatsApp](https://wa.me/6281234567890) · [⭐ Beri bintang jika bermanfaat](https://github.com/miqbalputra/free-edu/stargazers)
+
+</div>
