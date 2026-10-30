@@ -1,6 +1,7 @@
 package main
 
 import (
+	"time"
 	"encoding/json"
 	"errors"
 	"net/http"
@@ -1005,6 +1006,23 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
 	var hafalanLancar int
 	db.QueryRow(`SELECT COUNT(*) FROM hafalan WHERE status='lancar' AND tanggal >= CURRENT_DATE - 7 AND sekolah_id=$1`, sid).Scan(&hafalanLancar)
 
+	// Pengingat input harian (ronde 2 persona Ust. Soleh: "anak buah malas input").
+	// Target GURU/admin yang input, bukan pengasuh: pesan singkat di dashboard.
+	var absenHariIni, hafalHariIni int
+	db.QueryRow(`SELECT COUNT(*) FROM absensi_siswa WHERE tanggal=CURRENT_DATE AND sekolah_id=$1`, sid).Scan(&absenHariIni)
+	db.QueryRow(`SELECT COUNT(*) FROM hafalan WHERE tanggal=CURRENT_DATE AND sekolah_id=$1`, sid).Scan(&hafalHariIni)
+	pengingat := ""
+	if totalSiswa > 0 {
+		hari := map[time.Weekday]string{time.Sunday:"Minggu", time.Monday:"Senin", time.Tuesday:"Selasa", time.Wednesday:"Rabu", time.Thursday:"Kamis", time.Friday:"Jumat", time.Saturday:"Sabtu"}[time.Now().Weekday()]
+		if absenHariIni == 0 && hafalHariIni == 0 {
+			pengingat = "Belum ada input hari ini (" + hari + "). Catat absensi & hafalan santri dulu, biar laporan orang tua tetap lengkap. 💪"
+		} else if absenHariIni == 0 {
+			pengingat = "Hafalan sudah dicatat ✅ — absensi hari ini (" + hari + ") belum. Jangan lupa!"
+		} else if hafalHariIni == 0 && c.Role == "guru" {
+			pengingat = "Absensi sudah dicatat ✅ — setoran hafalan hari ini (" + hari + ") belum ada."
+		}
+	}
+
 	perKelas := []map[string]interface{}{}
 	rows, err := db.Query(`SELECT kelas, COUNT(*) FROM siswa WHERE status='aktif' AND sekolah_id=$1 GROUP BY kelas ORDER BY kelas`, sid)
 	if err == nil {
@@ -1022,5 +1040,6 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
 		"total_siswa": totalSiswa, "total_guru": totalGuru,
 		"hadir_hari_ini": hadirHariIni, "spp_belum_lunas": sppBelum,
 		"saldo": saldo, "hafalan_lancar_minggu_ini": hafalanLancar, "per_kelas": perKelas,
+		"pengingat": pengingat,
 	})
 }
