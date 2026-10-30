@@ -197,7 +197,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
       <div class="hero-feats">
         <div><span>👨‍🎓</span> Data siswa &amp; absensi harian</div>
         <div><span>📝</span> Nilai &amp; rapor per semester</div>
-        <div><span>📖</span> Pencatatan hafalan Al-Qur'an</div>
+        <div><span>📖</span> Modul Al-Qur'an (untuk lembaga Islam)</div>
         <div><span>💰</span> SPP &amp; keuangan sekolah</div>
         <div><span>📅</span> Jadwal, agenda &amp; pengumuman</div>
       </div>
@@ -206,7 +206,8 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
       <h2>{{ mode==='daftar' ? 'Daftar Sekolah Baru 🏫' : 'Selamat Datang 👋' }}</h2>
       <div class="sub">{{ mode==='daftar' ? 'Gratis 14 hari, tanpa kartu kredit' : 'Masuk untuk mengelola sekolah Anda' }}</div>
       <template v-if="mode==='daftar'">
-        <label>Nama Sekolah *</label><input v-model="daftar.nama_sekolah" placeholder="mis. SDIT Al-Furqon">
+        <label>Jenis Lembaga *</label><select v-model="daftar.jenis"><option value="umum">🏫 Sekolah Umum (SD/SMP/SMA/sederajat)</option><option value="islam">🕌 Madrasah, TPQ &amp; Pesantren</option></select>
+        <label>Nama Sekolah *</label><input v-model="daftar.nama_sekolah" placeholder="mis. SD Negeri 1 / SDIT Al-Furqon">
         <label>Subdomain * (huruf kecil/tanpa spasi)</label><input v-model="daftar.subdomain" placeholder="mis. alfurqon">
         <div class="frow">
           <div><label>Nama Admin (Kepala Sekolah) *</label><input v-model="daftar.nama_admin"></div>
@@ -261,7 +262,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
         <button :class="{active:page==='absensi'}" @click="page='absensi'">✅ Absensi Siswa</button>
         <button :class="{active:page==='nilai'}" @click="page='nilai'">📝 Nilai</button>
         <button :class="{active:page==='rapor'}" @click="page='rapor'">📄 Rapor</button>
-        <button :class="{active:page==='hafalan'}" @click="page='hafalan'">📖 Hafalan</button>
+        <button v-if="menuQuran" :class="{active:page==='hafalan'}" @click="page='hafalan'">📖 Hafalan</button>
         <button :class="{active:page==='jadwal'}" @click="page='jadwal'">🗓️ Jadwal</button>
         <div class="sec">Kepegawaian &amp; Keuangan</div>
         <button v-if="user.role!=='guru'" :class="{active:page==='absensi-guru'}" @click="page='absensi-guru'">🧑‍🏫 Absensi Guru</button>
@@ -1024,6 +1025,7 @@ createApp({
     const API = location.origin; // API & frontend served from same origin via Go
     const token = ref(localStorage.getItem('simaka_token') || '');
     const user = ref(JSON.parse(localStorage.getItem('simaka_user') || 'null') || {});
+    const menuQuran = computed(() => (user.value.jenis || 'islam') === 'islam'); // default islam utk user lama
     const page = ref('dashboard');
     const loading = ref(false);
     const toast = ref(''); const toastErr = ref(false);
@@ -1211,7 +1213,7 @@ createApp({
         const r = await api('/api/login', {method:'POST', body: JSON.stringify(login.value)});
         token.value = r.token; user.value = r.user;
         localStorage.setItem('simaka_token', r.token);
-        localStorage.setItem('simaka_user', JSON.stringify(r.user));
+        api('/api/me').then(me => { user.value = Object.assign({}, user.value, me); localStorage.setItem('simaka_user', JSON.stringify(user.value)); }).catch(()=>{});
         showToast('Selamat datang, '+r.user.nama.split(',')[0]+'! 🎉');
         load('dashboard');
         api('/api/langganan').then(l=>langganan.value=l).catch(()=>{});
@@ -1430,7 +1432,7 @@ createApp({
         login.email='kepala@simaka.id'; login.password='kepala123';
         doLogin();
       } });
-    return { API, token, user, page, loading, toast, toastErr, login, dash, siswa, nilai, hafalan, jadwal, spp, pengeluaran, agenda, pengumuman, users, watch, ref, computed,
+    return { API, token, user, menuQuran, page, loading, toast, toastErr, login, dash, siswa, nilai, hafalan, jadwal, spp, pengeluaran, agenda, pengumuman, users, watch, ref, computed,
       kodeRef, salinRef, tour, quickHafalan, kirimLaporanWA, resetWaliToken, waKwitansi, langganan, absSiswa, absGuru, keu, absTanggal, absKelas, absGTanggal, qSiswa, filterKelas, filterKelasN, filterMapel, filterKelasJ, sppBulan, sppStatus,
       pengUraian, pengKategori, pengJumlah, modalSiswa, modalNilai, modalHafalan, modalSPP, modalAgenda, modalPengumuman, modalJadwal, modalUser,
       formSiswa, formNilai, formHafalan, formSPP, formAgenda, formPengumuman, formJadwal, formUser, rapor, raporSiswa, raporTA, modalBulk, bulk,

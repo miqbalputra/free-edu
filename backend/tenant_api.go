@@ -170,6 +170,7 @@ func handleDaftar(w http.ResponseWriter, r *http.Request) {
 		Email       string `json:"email"`
 		Password    string `json:"password"`
 		IsiDemo     *bool  `json:"isi_demo"`
+		Jenis       string `json:"jenis"` // 'umum' | 'islam' (default umum)
 		KodeRef     string `json:"kode_ref"`
 	}
 	json.NewDecoder(r.Body).Decode(&in)
@@ -196,10 +197,14 @@ func handleDaftar(w http.ResponseWriter, r *http.Request) {
 		jsonErr(w, 400, "Email sudah terdaftar")
 		return
 	}
+	jenis := in.Jenis
+	if jenis != "islam" {
+		jenis = "umum"
+	}
 	var sid int
 	kodeRef := "REF" + itoa(int(time.Now().UnixNano()%100000)) + strings.ToLower(strings.Split(in.Subdomain, "")[0])
-	err := db.QueryRow(`INSERT INTO sekolah (subdomain, nama, status, kode_ref, dirujuk_oleh) VALUES ($1,$2,'trial',$3,NULLIF($4,'')) RETURNING id`,
-		in.Subdomain, in.NamaSekolah, kodeRef, strings.TrimSpace(in.KodeRef)).Scan(&sid)
+	err := db.QueryRow(`INSERT INTO sekolah (subdomain, nama, status, jenis, kode_ref, dirujuk_oleh) VALUES ($1,$2,'trial',$3,$4,NULLIF($5,'')) RETURNING id`,
+		in.Subdomain, in.NamaSekolah, jenis, kodeRef, strings.TrimSpace(in.KodeRef)).Scan(&sid)
 	if err != nil {
 		// fallback tanpa kolom rujukan (instalasi lama)
 		err = db.QueryRow(`INSERT INTO sekolah (subdomain, nama, status) VALUES ($1,$2,'trial') RETURNING id`, in.Subdomain, in.NamaSekolah).Scan(&sid)

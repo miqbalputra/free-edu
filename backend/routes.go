@@ -256,7 +256,9 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 
 func handleMe(w http.ResponseWriter, r *http.Request) {
 	c := userFromContext(r)
-	respond(w, 200, map[string]interface{}{"id": c.UserID, "nama": c.Nama, "role": c.Role})
+	var jenis string
+	db.QueryRow(`SELECT COALESCE(jenis,'umum') FROM sekolah WHERE id=$1`, c.SekolahID).Scan(&jenis)
+	respond(w, 200, map[string]interface{}{"id": c.UserID, "nama": c.Nama, "role": c.Role, "jenis": jenis})
 }
 
 // ---------- SISWA ----------
