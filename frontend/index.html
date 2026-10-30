@@ -207,6 +207,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
       <div class="sub">{{ mode==='daftar' ? 'Gratis 14 hari, tanpa kartu kredit' : 'Masuk untuk mengelola sekolah Anda' }}</div>
       <template v-if="mode==='daftar'">
         <label>Jenis Lembaga *</label><select v-model="daftar.jenis"><option value="umum">🏫 Sekolah Umum (SD/SMP/SMA/sederajat)</option><option value="islam">🕌 Madrasah, TPQ &amp; Pesantren</option></select>
+        <template v-if="daftar.jenis==='umum'"><label>Jenjang *</label><select v-model="daftar.jenjang"><option value="SD">SD / MI (kelas 1–6)</option><option value="SMP">SMP / MTs (kelas 7–9)</option><option value="SMA">SMA / MA / SMK (kelas 10–12)</option></select></template>
         <label>Nama Sekolah *</label><input v-model="daftar.nama_sekolah" placeholder="mis. SD Negeri 1 / SDIT Al-Furqon">
         <label>Subdomain * (huruf kecil/tanpa spasi)</label><input v-model="daftar.subdomain" placeholder="mis. alfurqon">
         <div class="frow">
@@ -1054,7 +1055,7 @@ createApp({
     const bulk = ref({ kelas:'', mapel:'', jenis:'tugas', semester:'ganjil', items:[] });
     const set = ref({}); const logs = ref([]); const pw = ref({lama:'',baru:''});
     const raporCatatan = ref({catatan_wali:'',ekstrakurikuler:'',prestasi:''});
-    const mode = ref('login'); const daftar = ref({isi_demo:true});
+    const mode = ref('login'); const daftar = ref({isi_demo:true, jenis:'umum', jenjang:'SD'});
     const langganan = ref({status:'aktif',trial_sisa_hari:0}); const modalWA = ref(false); const waList = ref([]);
     const kodeRef = ref('');
     const importOpen = ref(false); const importStep = ref('pilih'); const importErr = ref('');
@@ -1114,9 +1115,10 @@ createApp({
     let siswaTimer = null;
 
     const bulanList = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
-    const mapelList = ['Matematika','Bahasa Indonesia','Bahasa Arab','IPA','IPS','PAI','PJOK','Seni','Prakarya','Bahasa Inggris','Tahfidz'];
+    let mapelList = ['Pendidikan Agama dan Budi Pekerti','Pendidikan Pancasila','Bahasa Indonesia','Bahasa Inggris','Matematika','Ilmu Pengetahuan Alam dan Sosial (IPAS)','Ilmu Pengetahuan Alam (IPA)','Ilmu Pengetahuan Sosial (IPS)','Informatika','Sejarah','Ekonomi','Sosiologi','Geografi','Fisika','Kimia','Biologi','PJOK','Seni Budaya','Seni Budaya (SBDP)','Prakarya','Bahasa Arab','PAI','Tahfidz'];
     const surahList = ['Al-Fatihah','Al-Baqarah','Ali Imran','An-Nisa','Al-Maidah','Al-Anam','Al-Araf','Al-Anfal','At-Taubah','Yunus','Yusuf','Ar-Rad','Ibrahim','Al-Hijr','An-Nahl','Al-Isra','Al-Kahfi','Maryam','Taha','Al-Ankabut','Ar-Rum','Luqman','As-Sajdah','Ya-Sin','Al-Mulk','Al-Qalam','Al-Haqqah','Al-Muzzammil','Al-Muddatsir','Al-Qiyamah','An-Naba','An-Nazi`at','Abasa','At-Takwir','Al-Insyiqaq','Al-Buruj','At-Thariq','Al-A`la','Al-Ghasyiyah','Al-Fajr','Al-Balad','Asy-Syams','Al-Lail','Ad-Duha','Al-Insyirah','Al-Qadr','Al-Alaq','At-Tin','Al-Insyirotah','Al-Fil','Quraisy','Al-Ma`un','Al-Kautsar','Al-Kafirun','An-Nasr','Al-Lahab','Al-Ikhlas','Al-Falaq','An-Nas'];
     const kelasList = computed(() => [...new Set(siswa.value.map(s => s.kelas))].sort());
+    const tingkatList = computed(() => { const j = user.value.jenjang || ''; if (j==='SD') return ['1','2','3','4','5','6']; if (j==='SMP') return ['7','8','9']; if (j==='SMA') return ['10','11','12']; return []; });
     const filteredSiswa = computed(() => siswa.value.filter(s =>
       (!filterKelas.value || s.kelas === filterKelas.value) &&
       (!qSiswa.value || (s.nama+s.nis).toLowerCase().includes(qSiswa.value.toLowerCase()))));
@@ -1426,13 +1428,13 @@ createApp({
     watch(page, (p)=>{ if(p) load(p); if(p==='rekap') loadRekap(); if(p==='wali') loadWali(); if(p==='admin') loadAdmin();
       if(p==='upgrade') api('/api/kode-ref').then(k=>{ kodeRef.value=k.kode_ref||''; }).catch(()=>{}); });
 
-    onMounted(() => { if (token.value) { load('dashboard'); api('/api/pengaturan').then(p=>{ set.value=p; raporTA.value=p.tahun_ajaran_aktif||'2026/2027'; }).catch(()=>{}); }
+    onMounted(() => { if (token.value) { load('dashboard'); api('/api/pengaturan').then(p=>{ set.value=p; raporTA.value=p.tahun_ajaran_aktif||'2026/2027'; }).catch(()=>{}); api('/api/mapel').then(m=>{ if (Array.isArray(m) && m.length) mapelList = m.map(x=>x.nama); }).catch(()=>{}); }
       // Demo instan via ?demo=1 dari landing — masuk sebagai kepala sekolah demo
       if (!token.value && new URLSearchParams(location.search).get('demo')) {
         login.email='kepala@simaka.id'; login.password='kepala123';
         doLogin();
       } });
-    return { API, token, user, menuQuran, page, loading, toast, toastErr, login, dash, siswa, nilai, hafalan, jadwal, spp, pengeluaran, agenda, pengumuman, users, watch, ref, computed,
+    return { API, token, user, menuQuran, tingkatList, page, loading, toast, toastErr, login, dash, siswa, nilai, hafalan, jadwal, spp, pengeluaran, agenda, pengumuman, users, watch, ref, computed,
       kodeRef, salinRef, tour, quickHafalan, kirimLaporanWA, resetWaliToken, waKwitansi, langganan, absSiswa, absGuru, keu, absTanggal, absKelas, absGTanggal, qSiswa, filterKelas, filterKelasN, filterMapel, filterKelasJ, sppBulan, sppStatus,
       pengUraian, pengKategori, pengJumlah, modalSiswa, modalNilai, modalHafalan, modalSPP, modalAgenda, modalPengumuman, modalJadwal, modalUser,
       formSiswa, formNilai, formHafalan, formSPP, formAgenda, formPengumuman, formJadwal, formUser, rapor, raporSiswa, raporTA, modalBulk, bulk,

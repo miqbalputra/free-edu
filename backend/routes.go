@@ -66,6 +66,7 @@ func registerRoutes(mux *http.ServeMux) {
 	api.Handle("DELETE /api/agenda/{id}", authMiddleware(writeGuard(roleMW(handleDeleteAgenda, "kepala_sekolah", "tu"))))
 	api.Handle("PUT /api/agenda/{id}", authMiddleware(writeGuard(roleMW(handleUpdateAgenda, "kepala_sekolah", "tu", "guru"))))
 	api.Handle("GET /api/jadwal", authMiddleware(http.HandlerFunc(handleListJadwal)))
+	api.Handle("GET /api/mapel", authMiddleware(http.HandlerFunc(handleListMapel)))
 	api.Handle("POST /api/jadwal", authMiddleware(writeGuard(roleMW(handleCreateJadwal, "tu", "kepala_sekolah"))))
 	api.Handle("DELETE /api/jadwal/{id}", authMiddleware(writeGuard(roleMW(handleDeleteJadwal, "tu", "kepala_sekolah"))))
 	api.Handle("PUT /api/jadwal/{id}", authMiddleware(writeGuard(roleMW(handleUpdateJadwal, "tu", "kepala_sekolah"))))
@@ -256,9 +257,9 @@ func handleLogin(w http.ResponseWriter, r *http.Request) {
 
 func handleMe(w http.ResponseWriter, r *http.Request) {
 	c := userFromContext(r)
-	var jenis string
-	db.QueryRow(`SELECT COALESCE(jenis,'umum') FROM sekolah WHERE id=$1`, c.SekolahID).Scan(&jenis)
-	respond(w, 200, map[string]interface{}{"id": c.UserID, "nama": c.Nama, "role": c.Role, "jenis": jenis})
+	var jenis, jenjang string
+	db.QueryRow(`SELECT COALESCE(jenis,'umum'), COALESCE(jenjang,'') FROM sekolah WHERE id=$1`, c.SekolahID).Scan(&jenis, &jenjang)
+	respond(w, 200, map[string]interface{}{"id": c.UserID, "nama": c.Nama, "role": c.Role, "jenis": jenis, "jenjang": jenjang})
 }
 
 // ---------- SISWA ----------
@@ -1049,4 +1050,22 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
 		"saldo": saldo, "hafalan_lancar_minggu_ini": hafalanLancar, "per_kelas": perKelas,
 		"pengingat": pengingat,
 	})
+}
+
+// GET /api/mapel — daftar mapel sekolah (dari tabel mapel; fallback: daftar statis)
+func handleListMapel(w http.ResponseWriter, r *http.Request) {
+	c := userFromContext(r)
+	rows, err := db.Query(`SELECT nama, COALESCE(jenjang,'') FROM mapel WHERE sekolah_id=$1 ORDER BY id`, c.SekolahID)
+	if err != nil {
+		jsonErr(w, 500, userErr(err))
+		return
+	}
+	defer rows.Close()
+	list := []map[string]string{}
+	for rows.Next() {
+		var nama, j string
+		rows.Scan(&nama, &j)
+		list = append(list, map[string]string{"nama": nama, "jenjang": j})
+	}
+	respond(w, 200, list)
 }

@@ -208,8 +208,10 @@ func handleRaporData(w http.ResponseWriter, r *http.Request) {
 			total += na
 			n++
 		}
+		pred, ket := predikatMerdeka(na)
 		list = append(list, map[string]interface{}{
 			"mapel": m.Mapel, "tugas": m.Tugas, "uh": m.UH, "pts": m.PTS, "pas": m.PAS, "na": na,
+			"predikat": pred, "ket": ket,
 		})
 	}
 	var rataRata float64
@@ -308,8 +310,9 @@ func handleCetakRapor(w http.ResponseWriter, r *http.Request) {
 			total += na
 			n++
 		}
-		fmt.Fprintf(&b, `<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td><b>%s</b></td></tr>`,
-			html.EscapeString(mapel), f(m.t), f(m.u), f(m.p), f(m.pas), strconv.FormatFloat(na, 'f', 1, 64))
+		predRow, _ := predikatMerdeka(na)
+		fmt.Fprintf(&b, `<tr><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td>%s</td><td><b>%s</b></td><td style="text-align:center"><b>%s</b></td></tr>`,
+			html.EscapeString(mapel), f(m.t), f(m.u), f(m.p), f(m.pas), strconv.FormatFloat(na, 'f', 1, 64), predRow)
 	}
 	rata := 0.0
 	if n > 0 {
@@ -355,7 +358,7 @@ th,td{border:1px solid #333;padding:6px 8px;text-align:left} th{background:#e8f5
 <table><tr><td width="50%%">Nama: <b>%s</b></td><td>NIS: <b>%s</b></td></tr>
 <tr><td>Kelas: <b>%s</b></td><td>Orang Tua: <b>%s</b></td></tr></table>
 <h3 style="font-size:14px">A. Nilai Akademik</h3>
-<table><tr><th>Mata Pelajaran</th><th>Tugas</th><th>UH</th><th>PTS</th><th>PAS</th><th>NA</th></tr>%s</table>
+<table><tr><th>Mata Pelajaran</th><th>Tugas</th><th>UH</th><th>PTS</th><th>PAS</th><th>NA</th><th>Predikat</th></tr>%s</table>
 <p style="font-size:13px">Rata-rata: <b>%s</b> &nbsp;|&nbsp; Predikat: <b>%s</b> (%s)</p>
 <h3 style="font-size:14px">B. Kehadiran</h3>
 <table><tr><th>Hadir</th><th>Sakit</th><th>Izin</th><th>Alpa</th></tr>

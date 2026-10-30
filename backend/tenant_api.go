@@ -170,7 +170,8 @@ func handleDaftar(w http.ResponseWriter, r *http.Request) {
 		Email       string `json:"email"`
 		Password    string `json:"password"`
 		IsiDemo     *bool  `json:"isi_demo"`
-		Jenis       string `json:"jenis"` // 'umum' | 'islam' (default umum)
+		Jenis       string `json:"jenis"`     // 'umum' | 'islam' (default umum)
+		Jenjang     string `json:"jenjang"`   // SD | SMP | SMA (sekolah umum)
 		KodeRef     string `json:"kode_ref"`
 	}
 	json.NewDecoder(r.Body).Decode(&in)
@@ -203,8 +204,12 @@ func handleDaftar(w http.ResponseWriter, r *http.Request) {
 	}
 	var sid int
 	kodeRef := "REF" + itoa(int(time.Now().UnixNano()%100000)) + strings.ToLower(strings.Split(in.Subdomain, "")[0])
-	err := db.QueryRow(`INSERT INTO sekolah (subdomain, nama, status, jenis, kode_ref, dirujuk_oleh) VALUES ($1,$2,'trial',$3,$4,NULLIF($5,'')) RETURNING id`,
-		in.Subdomain, in.NamaSekolah, jenis, kodeRef, strings.TrimSpace(in.KodeRef)).Scan(&sid)
+	jenjang := strings.ToUpper(strings.TrimSpace(in.Jenjang))
+	if jenjang != "SD" && jenjang != "SMP" && jenjang != "SMA" {
+		jenjang = ""
+	}
+	err := db.QueryRow(`INSERT INTO sekolah (subdomain, nama, status, jenis, jenjang, kode_ref, dirujuk_oleh) VALUES ($1,$2,'trial',$3,$4,$5,NULLIF($6,'')) RETURNING id`,
+		in.Subdomain, in.NamaSekolah, jenis, jenjang, kodeRef, strings.TrimSpace(in.KodeRef)).Scan(&sid)
 	if err != nil {
 		// fallback tanpa kolom rujukan (instalasi lama)
 		err = db.QueryRow(`INSERT INTO sekolah (subdomain, nama, status) VALUES ($1,$2,'trial') RETURNING id`, in.Subdomain, in.NamaSekolah).Scan(&sid)
@@ -234,6 +239,10 @@ func handleDaftar(w http.ResponseWriter, r *http.Request) {
 	db.Exec(`INSERT INTO langganan (sekolah_id, paket, status, catatan) VALUES ($1,'gratis','aktif','Trial 14 hari')`, sid)
 	// pengaturan per sekolah (kop kwitansi, tahun ajaran, dsb.)
 	db.Exec(`INSERT INTO pengaturan (id, nama_sekolah, tahun_ajaran_aktif) VALUES ($1,$2,'2026/2027') ON CONFLICT DO NOTHING`, sid, in.NamaSekolah)
+	// P2 pivot: sekolah umum → mapel default Kurikulum Merdeka sesuai jenjang
+	if jenis == "umum" && jenjang != "" {
+		seedKurikulumUmum(sid, jenjang)
+	}
 	hash, _ := bcrypt.GenerateFromPassword([]byte(in.Password), bcrypt.DefaultCost)
 	var uid int
 	db.QueryRow(`INSERT INTO users (nama,email,password,role,sekolah_id) VALUES ($1,$2,$3,'kepala_sekolah',$4) RETURNING id`,
