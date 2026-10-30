@@ -16,13 +16,13 @@ import (
 func handleLaporanWali(w http.ResponseWriter, r *http.Request) {
 	tokSiswa, tokSekolah, ok := waliTokenCheck(r.URL.Query().Get("token"))
 	if !ok {
-		http.Error(w, "Tautan tidak valid atau sudah kedaluwarsa. Minta tautan baru ke ustadz/ustadzah.", 401)
+		http.Error(w, "Tautan tidak valid atau sudah kedaluwarsa. Minta tautan baru ke guru/wali kelas.", 401)
 		return
 	}
 	sid, _ := strconv.Atoi(r.PathValue("id"))
 	// Token per-wali terikat ke satu siswa: token ini hanya membuka laporan siswa itu.
 	if sid != tokSiswa {
-		http.Error(w, "Tautan ini hanya untuk satu siswa. Minta tautan yang benar ke ustadz/ustadzah.", 403)
+		http.Error(w, "Tautan ini hanya untuk satu siswa. Minta tautan yang benar ke guru/wali kelas.", 403)
 		return
 	}
 	var siswaSekolah int
@@ -144,7 +144,7 @@ td,th{padding:7px 6px;text-align:left;border-bottom:1px solid #f0f0f5}
 <div class="absen"><span>🙏 Hadir: <b>` + strconv.Itoa(hadir) + `</b></span><span>🤒 Sakit: <b>` + strconv.Itoa(sakit) + `</b></span><span>📝 Izin: <b>` + strconv.Itoa(izin) + `</b></span><span>❌ Tanpa kabar: <b>` + strconv.Itoa(alpa) + `</b></span></div></div>
 
 <div class="card" style="text-align:center"><p style="font-size:13.5px;margin:0 0 4px">Ada pertanyaan tentang anak Anda?</p>
-<p style="font-size:12.5px;color:#6b7280;margin:0">Hubungi ustadz/ustadzah pembimbing atau pengelola sekolah.<br>` + esc(namaSekolah) + ` · ` + esc(kepala) + `</p></div>
+<p style="font-size:12.5px;color:#6b7280;margin:0">Hubungi guru/wali kelas atau pengelola sekolah.<br>` + esc(namaSekolah) + ` · ` + esc(kepala) + `</p></div>
 <p class="foot">Laporan ini dibuat otomatis oleh SIMAKA · ` + namaSekolah + `</p>
 </body></html>`)
 

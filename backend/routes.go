@@ -1018,8 +1018,9 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
 	db.QueryRow(`SELECT COUNT(*) FROM spp WHERE status='belum' AND sekolah_id=$1`, sid).Scan(&sppBelum)
 	db.QueryRow(`SELECT COALESCE(SUM(jumlah),0) FROM spp WHERE status='lunas' AND sekolah_id=$1`, sid).Scan(&saldo)
 
-	var hafalanLancar int
-	db.QueryRow(`SELECT COUNT(*) FROM hafalan WHERE status='lancar' AND tanggal >= CURRENT_DATE - 7 AND sekolah_id=$1`, sid).Scan(&hafalanLancar)
+	var hafalanLancar, jenisSekolah int
+	db.QueryRow(`SELECT COUNT(*), CASE WHEN COALESCE((SELECT jenis FROM sekolah WHERE id=$1),'umum')='islam' THEN 1 ELSE 0 END
+		FROM hafalan WHERE status='lancar' AND tanggal >= CURRENT_DATE - 7 AND sekolah_id=$1`, sid).Scan(&hafalanLancar, &jenisSekolah)
 
 	// Pengingat input harian (ronde 2 persona Ust. Soleh: "anak buah malas input").
 	// Target GURU/admin yang input, bukan pengasuh: pesan singkat di dashboard.
@@ -1029,11 +1030,11 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
 	pengingat := ""
 	if totalSiswa > 0 {
 		hari := map[time.Weekday]string{time.Sunday:"Minggu", time.Monday:"Senin", time.Tuesday:"Selasa", time.Wednesday:"Rabu", time.Thursday:"Kamis", time.Friday:"Jumat", time.Saturday:"Sabtu"}[time.Now().Weekday()]
-		if absenHariIni == 0 && hafalHariIni == 0 {
-			pengingat = "Belum ada input hari ini (" + hari + "). Catat absensi & hafalan santri dulu, biar laporan orang tua tetap lengkap. 💪"
+		if absenHariIni == 0 && (jenisSekolah == 0 || hafalHariIni == 0) {
+			pengingat = "Belum ada input hari ini (" + hari + "). Catat absensi siswa dulu, biar laporan orang tua tetap lengkap. 💪"
 		} else if absenHariIni == 0 {
-			pengingat = "Hafalan sudah dicatat ✅ — absensi hari ini (" + hari + ") belum. Jangan lupa!"
-		} else if hafalHariIni == 0 && c.Role == "guru" {
+			pengingat = "Input lain sudah dicatat ✅ — absensi hari ini (" + hari + ") belum. Jangan lupa!"
+		} else if hafalHariIni == 0 && jenisSekolah == 1 && c.Role == "guru" {
 			pengingat = "Absensi sudah dicatat ✅ — setoran hafalan hari ini (" + hari + ") belum ada."
 		}
 	}
@@ -1050,13 +1051,17 @@ func handleDashboard(w http.ResponseWriter, r *http.Request) {
 		rows.Close()
 	}
 
-	respond(w, 200, map[string]interface{}{
+	out := map[string]interface{}{
 		"role": c.Role, "nama": c.Nama,
 		"total_siswa": totalSiswa, "total_guru": totalGuru,
 		"hadir_hari_ini": hadirHariIni, "spp_belum_lunas": sppBelum,
-		"saldo": saldo, "hafalan_lancar_minggu_ini": hafalanLancar, "per_kelas": perKelas,
+		"saldo": saldo, "per_kelas": perKelas,
 		"pengingat": pengingat,
-	})
+	}
+	if jenisSekolah == 1 {
+		out["hafalan_lancar_minggu_ini"] = hafalanLancar
+	}
+	respond(w, 200, out)
 }
 
 // GET /api/mapel — daftar mapel sekolah (dari tabel mapel; fallback: daftar statis)

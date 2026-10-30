@@ -50,8 +50,8 @@ type ringkasan struct {
 }
 
 func susunRingkasan(sekolahID int) ringkasan {
-	var namaSekolah string
-	db.QueryRow(`SELECT nama_sekolah FROM pengaturan WHERE id=$1`, sekolahID).Scan(&namaSekolah)
+	var namaSekolah, jenisSekolah string
+	db.QueryRow(`SELECT p.nama_sekolah, COALESCE(sk.jenis,'umum') FROM pengaturan p JOIN sekolah sk ON sk.id=p.id WHERE p.id=$1`, sekolahID).Scan(&namaSekolah, &jenisSekolah)
 	week := `now() - interval '7 days'`
 
 	// absensi: berapa hari tercatat minggu ini vs berapa kelas aktif
@@ -86,10 +86,12 @@ var lunas, belum int
 	if kelasKosong > 0 && kelasAktif > 0 {
 		sb.WriteString(fmt.Sprintf("   · %d kelas belum ada catatan absensinya\n", kelasKosong))
 	}
-	if setoran > 0 {
-		sb.WriteString(fmt.Sprintf("📖 Hafalan: %d setoran tercatat\n", setoran))
-	} else {
-		sb.WriteString("📖 Hafalan: belum ada setoran minggu ini\n")
+	if jenisSekolah == "islam" {
+		if setoran > 0 {
+			sb.WriteString(fmt.Sprintf("📖 Hafalan: %d setoran tercatat\n", setoran))
+		} else {
+			sb.WriteString("📖 Hafalan: belum ada setoran minggu ini\n")
+		}
 	}
 	if lunas > 0 {
 		sb.WriteString(fmt.Sprintf("💰 SPP: %d pembayaran masuk (%s)\n", lunas, fnumFmt(nominal)))

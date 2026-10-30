@@ -83,7 +83,10 @@ func handleRekapBulanan(w http.ResponseWriter, r *http.Request, c *Claims) {
 		c.SekolahID, bulan).Scan(&pengeluaran)
 	out["keuangan"] = map[string]interface{}{"pemasukan": pemasukan, "pengeluaran": pengeluaran, "selisih": pemasukan - pengeluaran}
 
-	// 4. Hafalan per status
+	// 4. Hafalan per status — hanya lembaga islam
+	var jenis string
+	db.QueryRow(`SELECT COALESCE(jenis,'umum') FROM sekolah WHERE id=$1`, c.SekolahID).Scan(&jenis)
+	if jenis == "islam" {
 	rows, err = db.Query(`SELECT h.status, COUNT(*) FROM hafalan h JOIN siswa s ON s.id=h.siswa_id
 		WHERE s.sekolah_id=$1 AND to_char(h.tanggal,'YYYY-MM')=$2 GROUP BY h.status`, c.SekolahID, bulan)
 	if err == nil {
@@ -96,6 +99,7 @@ func handleRekapBulanan(w http.ResponseWriter, r *http.Request, c *Claims) {
 		}
 		rows.Close()
 		out["hafalan"] = hf
+		}
 	}
 
 	// 5. Rata-rata nilai per kelas
