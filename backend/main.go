@@ -39,6 +39,19 @@ func main() {
 			rotateLog()
 		}
 	}()
+	// laporan mingguan WA pengasuh: cek tiap jam, kirim sekali sehari setelah jam 20.00 WIB (13.00 UTC)
+	go func() {
+		sudahKirim := ""
+		for {
+			now := time.Now().UTC().Add(8 * time.Hour) // WIB
+			hari := now.Format("2006-01-02")
+			if now.Hour() >= 20 && sudahKirim != hari {
+				sudahKirim = hari
+				kirimLaporanSemua()
+			}
+			time.Sleep(30 * time.Minute)
+		}
+	}()
 	if err := migrate(); err != nil {
 		log.Fatal("migrate: ", err)
 	}

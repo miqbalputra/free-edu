@@ -18,16 +18,16 @@ func handleGetPengaturan(w http.ResponseWriter, r *http.Request) {
 		jsonErr(w, 401, "Unauthorized")
 		return
 	}
-	var nama, alamat, npsn, kepala, ta, sem string
-	err := db.QueryRow(`SELECT nama_sekolah, COALESCE(alamat,''), COALESCE(npsn,''), COALESCE(kepala_sekolah,''), tahun_ajaran_aktif, semester_aktif FROM pengaturan WHERE id=$1`, c.SekolahID).
-		Scan(&nama, &alamat, &npsn, &kepala, &ta, &sem)
+	var nama, alamat, npsn, kepala, ta, sem, waPeng string
+	err := db.QueryRow(`SELECT nama_sekolah, COALESCE(alamat,''), COALESCE(npsn,''), COALESCE(kepala_sekolah,''), tahun_ajaran_aktif, semester_aktif, COALESCE(wa_pengasuh,'') FROM pengaturan WHERE id=$1`, c.SekolahID).
+		Scan(&nama, &alamat, &npsn, &kepala, &ta, &sem, &waPeng)
 	if err != nil {
 		jsonErr(w, 500, userErr(err))
 		return
 	}
 	respond(w, 200, map[string]string{
 		"nama_sekolah": nama, "alamat": alamat, "npsn": npsn, "kepala_sekolah": kepala,
-		"tahun_ajaran_aktif": ta, "semester_aktif": sem,
+		"tahun_ajaran_aktif": ta, "semester_aktif": sem, "wa_pengasuh": waPeng,
 	})
 }
 

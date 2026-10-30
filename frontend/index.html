@@ -614,6 +614,14 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           <div><label>Semester Aktif</label><select v-model="set.semester_aktif"><option value="ganjil">Ganjil</option><option value="genap">Genap</option></select></div>
         </div>
         <div style="margin-top:16px"><button class="btn" @click="saveSet">💾 Simpan Pengaturan</button></div>
+        <div style="margin-top:16px">
+          <label>📱 Nomor WhatsApp Pengasuh (untuk laporan mingguan otomatis)</label>
+          <div style="display:flex;gap:8px">
+            <input v-model="set.wa_pengasuh" placeholder="mis. 081234567890" style="flex:1">
+            <button class="btn sec" @click="saveWaPengasuh">Simpan</button>
+          </div>
+          <small style="opacity:.65;font-size:11.5px">Setiap malam jam 20.00, pengasuh menerima ringkasan: absensi, hafalan, dan pembayaran minggu ini — langsung di WhatsApp, tanpa perlu buka aplikasi.</small>
+        </div>
         <div style="margin-top:24px;padding-top:16px;border-top:1px solid var(--line)">
           <b>📦 Data Anda Milik Anda</b>
           <p style="font-size:13px;opacity:.75;margin:6px 0 10px">Unduh seluruh data sekolah (siswa, nilai, hafalan, absensi, SPP, keuangan) dalam satu file ZIP yang bisa dibuka dengan Excel. Data bisa diunduh kapan saja, kapan pun, apa pun status langganan Anda.</p>
@@ -1244,6 +1252,14 @@ createApp({
       } catch(e){ showToast(e.message, true); }
     }
     function cetakRapor(){ window.open('/api/rapor-cetak/'+raporSiswa.value+'?tahun_ajaran='+encodeURIComponent(raporTA.value)+'&token='+encodeURIComponent(token.value), '_blank'); }
+    async function saveWaPengasuh(){ try { await api('/wa-pengasuh',{method:'POST',body:JSON.stringify({wa_pengasuh:set.value.wa_pengasuh})}); showToast('Nomor WA pengasuh tersimpan ✅'); } catch(e){ showToast(e.message,true); } }
+    async function kirimLaporan(){
+      try {
+        const r = await api('/laporan-mingguan');
+        if(!r.wa){ showToast('Isi dulu Nomor WhatsApp Pengasuh di menu Profil Sekolah.', true); page.value='pengaturan'; return; }
+        window.open(r.link_wa,'_blank');
+      } catch(e){ showToast(e.message,true); }
+    }
     function waNorm2(x){ x=(x||'').replace(/[^0-9]/g,''); if(x.startsWith('0')) x='62'+x.slice(1); return x; }
     async function kirimLaporanWA(){
       const sw = siswa.find(s=>s.id===Number(raporSiswa.value));

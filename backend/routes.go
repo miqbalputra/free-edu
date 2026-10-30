@@ -83,6 +83,8 @@ func registerRoutes(mux *http.ServeMux) {
 	api.Handle("GET /api/export/rekap", authMiddleware(roleMWAuth(planMWClaimsExport(handleExportRekap), "kepala_sekolah", "tu")))
 	api.Handle("GET /api/export/all", authMiddleware(http.HandlerFunc(handleExportAll)))
 	api.Handle("GET /api/kode-ref", authMiddleware(http.HandlerFunc(handleKodeRefSaya)))
+	api.Handle("GET /api/laporan-mingguan", authMiddleware(http.HandlerFunc(handleLaporanMingguan)))
+	api.Handle("POST /api/wa-pengasuh", authMiddleware(writeGuard(roleMW(handleSetWaPengasuh, "kepala_sekolah", "tu"))))
 	api.Handle("GET /api/import/template", authMiddleware(http.HandlerFunc(handleTemplateImport)))
 	api.Handle("POST /api/import/preview", authMiddleware(writeGuard(http.HandlerFunc(handleImportPreview))))
 	api.Handle("POST /api/import/siswa", authMiddleware(writeGuard(roleMW(handleImportSiswa, "tu", "kepala_sekolah"))))
