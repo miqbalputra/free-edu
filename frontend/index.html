@@ -353,6 +353,7 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
           </select>
           <button class="btn" @click="openRapor" :disabled="!raporSiswa">Lihat Rapor</button>
           <button class="btn" style="background:#25d366" @click="kirimLaporanWA" :disabled="!raporSiswa" title="Kirim laporan hafalan & absensi ke WhatsApp orang tua">💬 Kirim ke Orang Tua</button>
+          <button class="btn" style="background:#6b7280" @click="resetWaliToken" :disabled="!raporSiswa" title="Buat tautan baru; tautan lama langsung tidak berlaku">🔄 Tautan Baru</button>
         </div>
         <div v-if="rapor" >
           <div class="stats">
@@ -1142,12 +1143,21 @@ createApp({
     }
     function cetakRapor(){ window.open('/api/rapor-cetak/'+raporSiswa.value+'?tahun_ajaran='+encodeURIComponent(raporTA.value)+'&token='+encodeURIComponent(token.value), '_blank'); }
     function waNorm2(x){ x=(x||'').replace(/[^0-9]/g,''); if(x.startsWith('0')) x='62'+x.slice(1); return x; }
-    function kirimLaporanWA(){
+    async function kirimLaporanWA(){
       const sw = siswa.find(s=>s.id===Number(raporSiswa.value));
       if(!sw || !sw.hp_ortu){ showToast('Nomor HP orang tua belum tercatat di data siswa ini.', true); return; }
-      const link = location.origin + '/api/laporan-wali/' + raporSiswa.value + '?token=' + encodeURIComponent(token.value);
+      try {
+        const wt = await api('/api/wali-token/' + raporSiswa.value);
+        const link = location.origin + '/api/laporan-wali/' + raporSiswa.value + '?token=' + encodeURIComponent(wt.token);
       const msg = 'Assalamualaikum Bapak/Ibu, berikut laporan perkembangan ' + sw.nama + ' (' + (sw.kelas||'') + ') di ' + (set.value.nama_sekolah||'sekolah') + ':\n' + link + '\nTautan ini hanya untuk Bapak/Ibu, tidak perlu install aplikasi.';
-      window.open('https://wa.me/' + waNorm2(sw.hp_ortu) + '?text=' + encodeURIComponent(msg), '_blank');
+        window.open('https://wa.me/' + waNorm2(sw.hp_ortu) + '?text=' + encodeURIComponent(msg), '_blank');
+      } catch(e){ showToast(e.message, true); }
+    }
+    async function resetWaliToken(){
+      try {
+        await api('/api/wali-token/' + raporSiswa.value, {method:'POST'});
+        showToast('Tautan lama sudah tidak berlaku. Tautan baru siap — kirim ulang ke orang tua. ✅');
+      } catch(e){ showToast(e.message, true); }
     }
     function waKwitansi(t){
       const link = location.origin + '/api/kwitansi/' + t.id + '?token=' + encodeURIComponent(token.value);
@@ -1300,7 +1310,7 @@ createApp({
         doLogin();
       } });
     return { API, token, user, page, loading, toast, toastErr, login, dash, siswa, nilai, hafalan, jadwal, spp, pengeluaran, agenda, pengumuman, users, watch, ref, computed,
-      kodeRef, salinRef, tour, quickHafalan, kirimLaporanWA, waKwitansi, langganan, absSiswa, absGuru, keu, absTanggal, absKelas, absGTanggal, qSiswa, filterKelas, filterKelasN, filterMapel, filterKelasJ, sppBulan, sppStatus,
+      kodeRef, salinRef, tour, quickHafalan, kirimLaporanWA, resetWaliToken, waKwitansi, langganan, absSiswa, absGuru, keu, absTanggal, absKelas, absGTanggal, qSiswa, filterKelas, filterKelasN, filterMapel, filterKelasJ, sppBulan, sppStatus,
       pengUraian, pengKategori, pengJumlah, modalSiswa, modalNilai, modalHafalan, modalSPP, modalAgenda, modalPengumuman, modalJadwal, modalUser,
       formSiswa, formNilai, formHafalan, formSPP, formAgenda, formPengumuman, formJadwal, formUser, rapor, raporSiswa, raporTA, modalBulk, bulk,
       set, logs, pw, raporCatatan, siswaData, siswaPage, siswaPages, rekap, rekapBulan, waliList, waliKelas, waliUser, waliCandidates,

@@ -9,41 +9,36 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-
-	"github.com/golang-jwt/jwt/v5"
 )
 
-func waliTokenAuth(r *http.Request) *Claims {
-	tokStr := r.URL.Query().Get("token")
-	if tokStr == "" {
-		return nil
-	}
-	tok, err := jwt.ParseWithClaims(tokStr, &Claims{}, func(t *jwt.Token) (interface{}, error) { return jwtSecret, nil })
-	if err != nil || !tok.Valid {
-		return nil
-	}
-	return tok.Claims.(*Claims)
-}
-
-// handleLaporanWali: halaman HTML read-only untuk wali murid (?id=<siswa>&token=<jwt>)
+// handleLaporanWali: halaman HTML read-only untuk wali murid (?id=<siswa>&token=<token-wali>)
 func handleLaporanWali(w http.ResponseWriter, r *http.Request) {
-	c := waliTokenAuth(r)
-	if c == nil {
+	tokSiswa, tokSekolah, ok := waliTokenCheck(r.URL.Query().Get("token"))
+	if !ok {
 		http.Error(w, "Tautan tidak valid atau sudah kedaluwarsa. Minta tautan baru ke ustadz/ustadzah.", 401)
 		return
 	}
 	sid, _ := strconv.Atoi(r.PathValue("id"))
+	// Token per-wali terikat ke satu siswa: token ini hanya membuka laporan siswa itu.
+	if sid != tokSiswa {
+		http.Error(w, "Tautan ini hanya untuk satu siswa. Minta tautan yang benar ke ustadz/ustadzah.", 403)
+		return
+	}
 	var siswaSekolah int
-	if err := db.QueryRow(`SELECT sekolah_id FROM siswa WHERE id=$1`, sid).Scan(&siswaSekolah); err != nil || siswaSekolah != c.SekolahID {
+	if err := db.QueryRow(`SELECT sekolah_id FROM siswa WHERE id=$1`, sid).Scan(&siswaSekolah); err != nil || siswaSekolah != tokSekolah {
 		http.Error(w, "Data tidak ditemukan", 404)
 		return
 	}
 	var nama, nis, kelas, namaSekolah, alamat, kepala string
 	db.QueryRow(`SELECT nama, COALESCE(nis,''), kelas FROM siswa WHERE id=$1`, sid).Scan(&nama, &nis, &kelas)
-	db.QueryRow(`SELECT nama_sekolah, COALESCE(alamat,''), COALESCE(kepala_sekolah,'') FROM pengaturan WHERE id=$1`, c.SekolahID).Scan(&namaSekolah, &alamat, &kepala)
+	db.QueryRow(`SELECT nama_sekolah, COALESCE(alamat,''), COALESCE(kepala_sekolah,'') FROM pengaturan WHERE id=$1`, tokSekolah).Scan(&namaSekolah, &alamat, &kepala)
 
-	// Hafalan terakhir (bahasa awam)
-	rows, err := db.Query(`SELECT surah, COALESCE(ayat_dari,0), COALESCE(ayat_sampai,0), status, to_char(tanggal,'DD Mon YYYY') FROM hafalan WHERE siswa_id=$1 ORDER BY tanggal DESC LIMIT 10`, sid)
+	// Hafalan terakhir (bahasa awam) — default 10, toggle ?semua=1 untuk riwayat lengkap
+	limit := 10
+	if r.URL.Query().Get("semua") == "1" {
+		limit = 300
+	}
+	rows, err := db.Query(fmt.Sprintf(`SELECT surah, COALESCE(ayat_dari,0), COALESCE(ayat_sampai,0), status, to_char(tanggal,'DD Mon YYYY') FROM hafalan WHERE siswa_id=$1 ORDER BY tanggal DESC LIMIT %d`, limit), sid)
 	hafRows := ""
 	if err == nil {
 		for rows.Next() {
@@ -69,6 +64,17 @@ func handleLaporanWali(w http.ResponseWriter, r *http.Request) {
 	}
 	if hafRows == "" {
 		hafRows = "<tr><td colspan=3 style='color:#6b7280'>Belum ada catatan hafalan.</td></tr>"
+	}
+	// Toggle riwayat lengkap (permintaan wali murid: "bisa lihat hafalan dari awal tahun?")
+	var jmlHafalan int
+	db.QueryRow(`SELECT COUNT(*) FROM hafalan WHERE siswa_id=$1`, sid).Scan(&jmlHafalan)
+	toggleHafalan := ""
+	if jmlHafalan > 10 {
+		if r.URL.Query().Get("semua") == "1" {
+			toggleHafalan = fmt.Sprintf(`<div style="text-align:center;margin:10px 0"><a href="?id=%d&amp;token=%s" style="color:#4f46e5;font-size:13px">▲ Tampilkan 10 terakhir saja</a></div>`, sid, r.URL.Query().Get("token"))
+		} else {
+			toggleHafalan = fmt.Sprintf(`<div style="text-align:center;margin:10px 0"><a href="?id=%d&amp;token=%s&amp;semua=1" style="color:#4f46e5;font-size:13px">▼ Lihat semua riwayat hafalan (%d catatan)</a></div>`, sid, r.URL.Query().Get("token"), jmlHafalan)
+		}
 	}
 
 	// Ringkasan absensi bulan ini
@@ -126,7 +132,7 @@ td,th{padding:7px 6px;text-align:left;border-bottom:1px solid #f0f0f5}
 <tr><td>Tagihan SPP</td><td style="text-align:right">` + sppInfo + `</td></tr></table></div>
 
 <div class="card"><h2>📖 Hafalan Terakhir</h2>
-<table><tr><th>Surah</th><th>Status</th><th>Tanggal</th></tr>` + hafRows + `</table></div>
+<table><tr><th>Surah</th><th>Status</th><th>Tanggal</th></tr>` + hafRows + `</table>` + toggleHafalan + `</div>
 
 <div class="card"><h2>✅ Kehadiran Bulan Ini</h2>
 <div class="absen"><span>🙏 Hadir: <b>` + strconv.Itoa(hadir) + `</b></span><span>🤒 Sakit: <b>` + strconv.Itoa(sakit) + `</b></span><span>📝 Izin: <b>` + strconv.Itoa(izin) + `</b></span><span>❌ Tanpa kabar: <b>` + strconv.Itoa(alpa) + `</b></span></div></div>

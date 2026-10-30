@@ -164,6 +164,14 @@ func migrate() error {
 			wali_id INT REFERENCES users(id),
 			UNIQUE(siswa_id, tahun_ajaran)
 		)`,
+		`CREATE TABLE IF NOT EXISTS wali_token (
+			id SERIAL PRIMARY KEY,
+			siswa_id INT NOT NULL REFERENCES siswa(id),
+			sekolah_id INT NOT NULL,
+			token TEXT NOT NULL UNIQUE,
+			kadaluarsa TIMESTAMPTZ NOT NULL,
+			dibuat TIMESTAMPTZ DEFAULT now()
+		)`,
 	}
 	for _, s := range stmts {
 		if _, err := db.Exec(s); err != nil {

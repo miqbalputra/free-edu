@@ -86,6 +86,8 @@ func registerRoutes(mux *http.ServeMux) {
 	api.Handle("GET /api/rapor-cetak/{id}", http.HandlerFunc(handleCetakRapor))
 	api.Handle("GET /api/kwitansi/{id}", http.HandlerFunc(handleKwitansi))
 	api.Handle("GET /api/laporan-wali/{id}", http.HandlerFunc(handleLaporanWali))
+	api.Handle("GET /api/wali-token/{id}", authMiddleware(authedHandler(handleWaliTokenGet)))
+	api.Handle("POST /api/wali-token/{id}", authMiddleware(writeGuard(roleMW(handleWaliTokenReset, "kepala_sekolah", "tu"))))
 	api.Handle("GET /api/wali", authMiddleware(authedHandler(handleListWali)))
 	api.Handle("POST /api/wali", authMiddleware(writeGuard(roleMW(handleSetWali, "kepala_sekolah", "tu"))))
 	api.Handle("GET /api/rekap", authMiddleware(roleMWAuth(planMWClaims("rekap", handleRekapBulanan), "kepala_sekolah", "tu")))
