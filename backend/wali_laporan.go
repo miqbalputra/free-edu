@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // handleLaporanWali: halaman HTML read-only untuk wali murid (?id=<siswa>&token=<token-wali>)
@@ -30,6 +31,8 @@ func handleLaporanWali(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	var nama, nis, kelas, namaSekolah, alamat, kepala string
+	var kadaluarsa time.Time
+	db.QueryRow(`SELECT kadaluarsa FROM wali_token WHERE token=$1`, r.URL.Query().Get("token")).Scan(&kadaluarsa)
 	db.QueryRow(`SELECT nama, COALESCE(nis,''), kelas FROM siswa WHERE id=$1`, sid).Scan(&nama, &nis, &kelas)
 	db.QueryRow(`SELECT nama_sekolah, COALESCE(alamat,''), COALESCE(kepala_sekolah,'') FROM pengaturan WHERE id=$1`, tokSekolah).Scan(&namaSekolah, &alamat, &kepala)
 
@@ -126,6 +129,9 @@ td,th{padding:7px 6px;text-align:left;border-bottom:1px solid #f0f0f5}
 .absen span{background:#eef2ff;border-radius:10px;padding:6px 12px;font-size:13px}
 .foot{text-align:center;font-size:11.5px;color:#9ca3af;margin-top:8px}
 </style></head><body>
+<div style="max-width:520px;margin:0 auto 12px;background:#ecfdf5;border:1px solid #a7f3d0;border-radius:10px;padding:9px 14px;font-size:12.5px;color:#065f46;text-align:center">
+🔒 Tautan khusus untuk orang tua/wali ` + esc(nama) + ` · berlaku s/d ` + kadaluarsa.Format("2 Jan 2006") + ` · diperbarui otomatis tiap ada catatan baru
+</div>
 <div class="card"><div class="kop"><h1>🏫 ` + esc(namaSekolah) + `</h1><p>` + esc(alamat) + `</p></div>
 <h2>Laporan ` + esc(nama) + ` · Kelas ` + esc(kelas) + `</h2>
 <table><tr><td>Perkembangan nilai</td><td style="text-align:right">` + statusNilai + `</td></tr>

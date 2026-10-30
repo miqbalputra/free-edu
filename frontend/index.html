@@ -692,7 +692,8 @@ label{font-size:12.5px;font-weight:700;color:var(--muted);display:block;margin:1
               <li>✅ Laporan konsolidasi yayasan</li>
               <li>✅ Onboarding & training</li>
             </ul>
-            <a v-if="langganan.plan!=='yayasan'" :href="waUpgrade" target="_blank" class="btn sec" style="margin-top:14px;text-decoration:none;justify-content:center">Hubungi Kami</a>
+            <span style="margin-top:14px;display:block;text-align:center;font-size:12px;background:#fef3c7;border-radius:8px;padding:8px 10px">🚧 <b>Segera hadir</b> — fitur multi-cabang sedang dibangun</span>
+            <a :href="waWaitlist" target="_blank" class="btn sec" style="margin-top:8px;text-decoration:none;justify-content:center">📋 Daftar Waitlist Yayasan</a>
           </div>
         </div>
         <p style="text-align:center;color:var(--muted);font-size:12.5px;margin-top:18px">
@@ -1128,6 +1129,7 @@ createApp({
     const pages = {dashboard:'Dashboard', siswa:'Data Siswa', absensi:'Absensi Siswa', nilai:'Nilai', rapor:'Rapor Siswa', hafalan:'Setoran Hafalan', jadwal:'Jadwal Pelajaran', 'absensi-guru':'Absensi Guru & Pegawai', spp:'SPP — Pembayaran Siswa', keuangan:'Keuangan Sekolah', agenda:'Agenda Kegiatan', pengumuman:'Pengumuman', users:'Manajemen Pengguna', log:'Log Aktivitas', pengaturan:'Profil Sekolah', akun:'Akun Saya', upgrade:'Paket & Upgrade'};
     const planLabel = computed(() => ({gratis:'🆓 Gratis', sekolah:'🏫 Sekolah', yayasan:'🕌 Yayasan'}[langganan.value.plan] || 'Gratis'));
     const waUpgrade = 'https://wa.me/6281234567890?text=' + encodeURIComponent('Halo, saya mau upgrade SIMAKA. Sekolah: ' + (user.value ? user.value.nama : '') );
+    const waWaitlist = 'https://wa.me/6281234567890?text=' + encodeURIComponent('Halo, saya mau daftar WAITLIST paket Yayasan SIMAKA (multi-cabang). Sekolah: ' + (user.value ? user.value.nama : '') + '. Kabari saya begitu fiturnya siap.');
     // === WhatsApp ke orang tua (link wa.me, tanpa API) ===
     function waNorm(hp){
       let h = String(hp||'').replace(/[^0-9]/g,'');

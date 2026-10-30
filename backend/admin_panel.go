@@ -52,6 +52,10 @@ func handleAdminSetPlan(w http.ResponseWriter, r *http.Request, c *Claims) {
 		jsonErr(w, 400, "Paket tidak valid")
 		return
 	}
+	if in.Paket == "yayasan" {
+		jsonErr(w, 400, "Paket Yayasan belum bisa diaktifkan — fitur multi-cabang belum tersedia. Gunakan paket Sekolah per cabang dulu.")
+		return
+	}
 	if in.Bulan <= 0 {
 		if in.Paket == "yayasan" {
 			in.Bulan = 12
